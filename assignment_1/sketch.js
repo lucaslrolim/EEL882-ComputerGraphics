@@ -5,24 +5,37 @@ var selectedPoint;
 var intersections;
 
 function setup(){
-    createCanvas(400,400);
+    createCanvas(window.innerWidth,window.innerHeight);
     lines = [];
     intersections = 0;
+    // Uma linha, nese programa, consiste de um objeto que contém necessariamente dois pontos
     newLine = {point1:[],point2:[]};
     lock = true;
     selectedPoint = {status:false,lineIndex:null,point: null};
 }
 
 function draw(){
+    background(249,249,249);
+    
+    // Conjunto de mensagens para facilitar a visualização do usuário sobre o desenho
+    fill(255,0,0);
+    text("Aperte DELETE para limpar a tela", 40, 40);
+    fill(134);
+    text("Número de interseções: " + intersections, window.innerWidth -300, 20);
+    text("Número de retas: " + lines.length, window.innerWidth -300, 40);
+    //
+    
     intersections = 0;
-    background(0);
-    stroke(153);
+    
+    // Se lock for true é porque já começamos a desenhar uma reta e desejamos definir o seu segundo ponto
     if(!lock){
         line(newLine.point1[0],newLine.point1[1],mouseX,mouseY);
     }
+    // Desenha as linhas na tela
     for(i = 0; i < lines.length; i++){
         line(lines[i].point1[0],lines[i].point1[1],lines[i].point2[0],lines[i].point2[1])
     }
+    // Calcula as interseções
     for(i = 0; i < lines.length; i++){
         for(j = 0; j < lines.length; j++){
             if(i != j){
@@ -30,9 +43,8 @@ function draw(){
                 line2 = [{x:lines[j].point1[0], y:lines[j].point1[1]},{x:lines[j].point2[0],y:lines[j].point2[1]}]
                 var intersec = line_intersect(line1,line2);
                 if(intersec != null){
-                    intersections += 1;
-                    // sinaliza interseções das linhas
-                    fill(134);
+                    // 0.5 porque essa condição será satisfeita nas duas linhas que se interceptam e irá somar 1
+                    intersections += 0.5;
                     ellipse(intersec.x,intersec.y,8,8);
                 }
             }
@@ -42,16 +54,15 @@ function draw(){
 }
 
 
-// When the user clicks the mouse
 function mousePressed() {
-    console.log(intersections);
-    // verifica se o usuário clicou em algum ponto próximo a uma extremidade de linah existente
+    // verifica se o usuário clicou em algum ponto próximo a uma extremidade de linha existente
     nearPoint(mouseX,mouseY);
+    // selectedPoint.status indica que o usuário clicou próximo a uma linha existente e selecionou uma extremidade para alterar de local
     if(selectedPoint.status && lock === true){
         // modifica a extremidade da linha selecionada
         var baseLine = [lines[selectedPoint.lineIndex].point2,lines[selectedPoint.lineIndex].point1];
         lines.splice(selectedPoint.lineIndex,1);
-        newLine.point1 = baseLine[selectedPoint.point-1];
+        newLine.point1 = baseLine[selectedPoint.point - 1];
         selectedPoint.status =false;
         lock = false;
     }
@@ -82,7 +93,7 @@ function mousePressed() {
 // point: indica qual exteminado da linha mencionado vamos querer alterar
 
 function nearPoint(m_x,m_y){
-    var range = 10;
+    var range = 15;
     var dist = range;
     var pointIndex;
     for(i = 0; i < lines.length; i++){
@@ -117,22 +128,52 @@ function nearPoint(m_x,m_y){
     }
 }
 
+function keyPressed() {
+  if (keyCode === DELETE) {
+    lines = []
+  }
+}
 
 // Calcula os pontos de interseção entre duas retas
-function line_intersect(a,b){
-    a.m = (a[0].y-a[1].y)/(a[0].x-a[1].x);  // slope of line 1
-    b.m = (b[0].y-b[1].y)/(b[0].x-b[1].x);  // slope of line 2
-    var x_intersect = (a.m * a[0].x - b.m*b[0].x + b[0].y - a[0].y) / (a.m - b.m)
-    var y_intersect = (a.m*b.m*(b[0].x-a[0].x) + b.m*a[0].y - a.m*b[0].y) / (b.m - a.m)
+
+function line_intersect(line1,line2){
     
-    if((x_intersect > a[0].x && x_intersect < a[1].x || y_intersect > a[0].y && y_intersect < a[1].y) &&
-       (x_intersect > b[0].x && x_intersect < b[1].x || y_intersect > b[0].y && y_intersect < b[1].y )){  
-            return a.m - b.m < Number.EPSILON ? undefined
-                                    : { x: x_intersect,
-                                        y: y_intersect};    
+    var x1 = line1[0].x;
+    var x2 = line1[1].x;
+    var x3 = line2[0].x;
+    var x4 = line2[1].x;
+    var y1 = line1[0].y;
+    var y2 = line1[1].y;
+    var y3 = line2[0].y;
+    var y4 = line2[1].y;
+        
+    var ua, ub, denom = (y4 - y3)*(x2 - x1) - (x4 - x3)*(y2 - y1);
+    if (denom == 0) {
+        return null;
+    }
+    ua = ((x4 - x3)*(y1 - y3) - (y4 - y3)*(x1 - x3))/denom;
+    ub = ((x2 - x1)*(y1 - y3) - (y2 - y1)*(x1 - x3))/denom;
+    
+    var x_intersect = x1 + ua*(x2 - x1);
+    var y_intersect = y1 + ua*(y2 - y1);
+    
+    // Verifica se o ponto encontrado está dentro de um segmento desenhado
+    // vamos ordenar os pontos para tornar o processo de verificação mais simples
+    max_l1_x = max(line1[0].x,line1[1].x);
+    min_l1_x = min(line1[0].x,line1[1].x);
+    max_l1_y = max(line1[0].y,line1[1].y);
+    min_l1_y = min(line1[0].y,line1[1].y);
+    max_l2_x = max(line2[0].x,line2[1].x);
+    min_l2_x = min(line2[0].x,line2[1].x);
+    max_l2_y = max(line2[0].y,line2[1].y);
+    min_l2_y = min(line2[0].y,line2[1].y);
+    
+
+    if((x_intersect > min_l1_x  && x_intersect < max_l1_x || y_intersect > min_l1_y && y_intersect <  max_l1_y) &&
+       (x_intersect > min_l2_x  && x_intersect < max_l2_x || y_intersect > min_l2_y && y_intersect <  max_l2_y )){
+            return { x: x_intersect,y: y_intersect};    
     }
     else{
         return null;
     }
-
 }
