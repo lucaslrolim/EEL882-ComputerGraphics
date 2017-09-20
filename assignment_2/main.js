@@ -127,7 +127,8 @@ function mousePressed() {
 		scene.add (line);
 		selected = line;
 		startingLineDraw = false;
-		polyVertices.push({"x":mouseX,"y":mouseY})
+		var vertex = new THREE.Vector3 (mouseX,mouseY,0);
+		polyVertices.push({"x":mouseX,"y":mouseY,"Vector3":vertex})
 	}
 	else{
 		var line = selected;
@@ -138,13 +139,37 @@ function mousePressed() {
 		newgeometry.vertices.push (point);
 		line.geometry = newgeometry;
 
+		// if true we fish to draw the polygon
 		if(endPoly({"x":mouseX,"y":mouseY})){
 			startingLineDraw = true;
-			polygons.push({"vertices":polyVertices});
-			polyVertices = []
+
+
+			var polyGeometry = new THREE.Geometry();
+
+			// add al vertex of the polygon to the geometry
+			for(var i = 0; i < polyVertices.length; i++){
+				polyGeometry.vertices.push(polyVertices[i].Vector3);
+			}
+
+			// Draw the polygon using shade
+
+			var drawingPoly = new THREE.Line (polyGeometry, material);
+			var shape = new THREE.Shape(drawingPoly.geometry.vertices);
+			var extrudeSettings = { amount: 8, bevelEnabled: true, bevelSegments: 2, steps: 2, bevelSize: 1, bevelThickness: 1 };
+			var geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+			var material2 = new THREE.MeshBasicMaterial({ color: Math.random() * 0xffffff , clipIntersection: true, } );
+			var mesh = new THREE.Mesh(geometry, material2);
+			scene.add(mesh);
+			polygons.push(drawingPoly);
+			// remove the baselines of the polygon
+			scene.remove(line);
+			// clean the drawing polygon vertices information
+			polyVertices = [];
+
 		}
 		else {
-			polyVertices.push({"x":mouseX,"y":mouseY})
+			var vertex = new THREE.Vector3 (mouseX,mouseY,0);
+			polyVertices.push({"x":mouseX,"y":mouseY,"Vector3":vertex})
 		}
 
 	}
@@ -159,14 +184,17 @@ function mouseReleased() {
 }
 
 function mouseMoved (){
-	var initPoint = new THREE.Vector3 (polyVertices[polyVertices.length-1].x,polyVertices[polyVertices.length-1].y,0);
-	var point = new THREE.Vector3 (mouseX,mouseY,0);
-	var geometry = new THREE.Geometry();
-	geometry.vertices.push (initPoint);
-	geometry.vertices.push (point);
-	scene.remove(drawingLine);
-	drawingLine = new THREE.Line (geometry, material);
-	scene.add (drawingLine);
+
+	if(polyVertices.length != 0){
+		var initPoint = new THREE.Vector3 (polyVertices[polyVertices.length-1].x,polyVertices[polyVertices.length-1].y,0);
+		var point = new THREE.Vector3 (mouseX,mouseY,0);
+		var geometry = new THREE.Geometry();
+		geometry.vertices.push (initPoint);
+		geometry.vertices.push (point);
+		scene.remove(drawingLine);
+		drawingLine = new THREE.Line (geometry, material);
+		scene.add (drawingLine);
+	}
 }
 
 init();
