@@ -107,6 +107,11 @@ var startingPoint; // store the first vertex coordinates of the polygon being dr
 var polyVertices; // store all vertex of the polygon being draw  
 var drawingLine; // draw a temporary line to orientate the user 
 
+var objects;
+var objectSelected;
+
+var movingObject;
+
 function setup () {
 	renderer.setClearColor (0xf6f6f6, 1);
 	material = new THREE.LineBasicMaterial ( {color:0x23303c, depthWrite:false, linewidth : 1 } );
@@ -115,9 +120,14 @@ function setup () {
 	drawingPoly = false;
 	polyVertices = []
 	polygons = []
+	objects = [];
+	objectSelected = false;
+	movingObject = false;
 }
 
 function mousePressed() {
+
+	isInside();
 
 	if(startingLineDraw){
 		var point = new THREE.Vector3 (mouseX,mouseY,0);
@@ -139,10 +149,9 @@ function mousePressed() {
 		newgeometry.vertices.push (point);
 		line.geometry = newgeometry;
 
-		// if true we fish to draw the polygon
+		// if true we finish to draw the polygon
 		if(endPoly({"x":mouseX,"y":mouseY})){
 			startingLineDraw = true;
-
 
 			var polyGeometry = new THREE.Geometry();
 
@@ -155,14 +164,17 @@ function mousePressed() {
 
 			var drawingPoly = new THREE.Line (polyGeometry, material);
 			var shape = new THREE.Shape(drawingPoly.geometry.vertices);
-			var extrudeSettings = { amount: 8, bevelEnabled: true, bevelSegments: 2, steps: 2, bevelSize: 1, bevelThickness: 1 };
+			var extrudeSettings = { amount: 8, bevelEnabled: false, bevelSegments: 2, steps: 2, bevelSize: 1, bevelThickness: 1 };
 			var geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
 			var material2 = new THREE.MeshBasicMaterial({ color: Math.random() * 0xffffff , clipIntersection: true, } );
 			var mesh = new THREE.Mesh(geometry, material2);
 			scene.add(mesh);
+			objects.push(mesh);
 			polygons.push(drawingPoly);
+
 			// remove the baselines of the polygon
 			scene.remove(line);
+			scene.remove(drawingLine);
 			// clean the drawing polygon vertices information
 			polyVertices = [];
 
@@ -177,10 +189,14 @@ function mousePressed() {
 }
 
 function mouseDragged() {
+
 	
 }
 
 function mouseReleased() {
+
+
+
 }
 
 function mouseMoved (){
@@ -216,3 +232,14 @@ function endPoly(vertex){
         return true;
     }
 }
+
+function isInside(){
+	var vector = new THREE.Vector3 (mouseX,mouseY,0);
+	 var raycaster = new THREE.Raycaster( camera.position, vector.sub( camera.position ).normalize() );
+	 var intersects = raycaster.intersectObjects(objects);
+	 if (intersects.length > 0){
+	 	console.log(intersects);
+	 	objectSelected = true;
+	 }
+}
+
