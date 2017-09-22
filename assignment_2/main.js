@@ -107,10 +107,10 @@ var startingPoint; // store the first vertex coordinates of the polygon being dr
 var polyVertices; // store all vertex of the polygon being draw  
 var drawingLine; // draw a temporary line to orientate the user 
 
-var objects;
-var objectSelected;
 
-var movingObject;
+var objectSelected; // true if user select (click) in an object
+var movingObject; // true if user is moving an object
+
 
 function setup () {
 	renderer.setClearColor (0xf6f6f6, 1);
@@ -123,13 +123,27 @@ function setup () {
 	objects = [];
 	objectSelected = false;
 	movingObject = false;
+
 }
 
 function mousePressed() {
 
-	isInside();
+	// check if user select (click in) some polygon
+	for(i = 0; i < polygons.length; i++){
+		var clickedPoint = {"x":mouseX,"y":mouseY};
+		isInside(clickedPoint,polygons[i].vertices);
+	}
 
-	if(startingLineDraw){
+
+	// Operate over the polygon the user select
+	if(objectSelected){
+		console.log("DO Something");
+		objectSelected = false;
+	}
+
+
+	// Set the first vertex of a polygon
+	if(startingLineDraw && !objectSelected){
 		var point = new THREE.Vector3 (mouseX,mouseY,0);
 		var geometry = new THREE.Geometry();
 		geometry.vertices.push (point);
@@ -140,7 +154,8 @@ function mousePressed() {
 		var vertex = new THREE.Vector3 (mouseX,mouseY,0);
 		polyVertices.push({"x":mouseX,"y":mouseY,"Vector3":vertex})
 	}
-	else{
+	// Draw polygons
+	if(!objectSelected){
 		var line = selected;
 		var point = new THREE.Vector3 (mouseX,mouseY,0);
 		var oldgeometry = line.geometry;
@@ -155,8 +170,8 @@ function mousePressed() {
 
 			var polyGeometry = new THREE.Geometry();
 
-			// add al vertex of the polygon to the geometry
-			for(var i = 0; i < polyVertices.length; i++){
+			// add all vertex of the polygon to the geometry
+			for(i = 0; i < polyVertices.length; i++){
 				polyGeometry.vertices.push(polyVertices[i].Vector3);
 			}
 
@@ -170,7 +185,13 @@ function mousePressed() {
 			var mesh = new THREE.Mesh(geometry, material2);
 			scene.add(mesh);
 			objects.push(mesh);
-			polygons.push(drawingPoly);
+			polygons.push(
+				{
+					"ThreePoly":drawingPoly,
+					"vertices":polyVertices
+				}
+				);
+
 
 			// remove the baselines of the polygon
 			scene.remove(line);
@@ -179,6 +200,7 @@ function mousePressed() {
 			polyVertices = [];
 
 		}
+		// if the polygon are not finished yet
 		else {
 			var vertex = new THREE.Vector3 (mouseX,mouseY,0);
 			polyVertices.push({"x":mouseX,"y":mouseY,"Vector3":vertex})
@@ -200,8 +222,7 @@ function mouseReleased() {
 }
 
 function mouseMoved (){
-
-	if(polyVertices.length != 0){
+	if(polyVertices.length != 0 && !objectSelected){
 		var initPoint = new THREE.Vector3 (polyVertices[polyVertices.length-1].x,polyVertices[polyVertices.length-1].y,0);
 		var point = new THREE.Vector3 (mouseX,mouseY,0);
 		var geometry = new THREE.Geometry();
@@ -222,7 +243,12 @@ init();
 //
 //------------------------------------------------------------
 
+
+// check if "close" a polygon with line draws
 function endPoly(vertex){
+	if(polyVertices.length < 3){
+		return false;
+	}
     var range = 15;
     var dist = range;
     var x_dif = vertex.x - polyVertices[0].x
@@ -233,13 +259,25 @@ function endPoly(vertex){
     }
 }
 
-function isInside(){
-	var vector = new THREE.Vector3 (mouseX,mouseY,0);
-	 var raycaster = new THREE.Raycaster( camera.position, vector.sub( camera.position ).normalize() );
-	 var intersects = raycaster.intersectObjects(objects);
-	 if (intersects.length > 0){
-	 	console.log(intersects);
-	 	objectSelected = true;
-	 }
-}
+// check if user click inside a ploygon
+function isInside(point, polyVertices) {
+    var inside = false;
+    for (var i = 0, j = polyVertices.length - 1; i < polyVertices.length; j = i++) {
+        var xi = polyVertices[i].x, yi = polyVertices[i].y;
+        var xj = polyVertices[j].x, yj = polyVertices[j].y;
+
+        var intersect = ((yi > point.y) != (yj > point.y))
+            && (point.x < (xj - xi) * (point.y - yi) / (yj - yi) + xi);
+
+        if (intersect){
+        	inside = !inside;
+        }
+    }
+    if(inside){
+    	console.log("INSIDE");
+    	objectSelected = true;
+    }
+
+    return inside;
+};
 
