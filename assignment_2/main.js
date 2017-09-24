@@ -44,11 +44,22 @@ function init() {
 		mouseX = event.clientX;
 		mouseY = event.clientY;
 	}
+
+	renderer.domElement.addEventListener ( 'dblclick', function () { 
+        setMouse();
+        mouseIsPressed = true; 
+        if (typeof doubleClick !== 'undefined') doubleClick();
+
+    });
+
 	renderer.domElement.addEventListener ( 'mousedown', function () {
 		setMouse();
 		mouseIsPressed = true; 
 		if (typeof mousePressed !== 'undefined') mousePressed();
 	});
+
+
+
 	renderer.domElement.addEventListener ( 'mousemove', function () { 
 		pmouseX = mouseX;
 		pmouseY = mouseY;
@@ -113,6 +124,8 @@ var movingObject; // true if user is moving an object
 var selectedPolygon; // user can select a polygon to move or rotate
 var clickedPoint; // aplly this matrix when moving or rotating a polygon
 
+var userDoubleclick;
+
 var transformationMatrix;
 
 function setup () {
@@ -124,7 +137,7 @@ function setup () {
 	polygons = []
 	objectSelected = false;
 	movingObject = false;
-
+	userDoubleclick = false;
 }
 
 function mousePressed() {
@@ -302,4 +315,22 @@ function getVertex(polyVertices){
 		}
 	}
 	return fixVertices;
+}
+
+function doubleClick(){
+	// clear things that mousePressed starts to do on the first click
+	polyVertices = [];
+	startingLineDraw = true;
+	scene.remove(drawingLine);
+
+	// add nail
+	var radius   = 5;
+	var segments = 64;
+	var material = new THREE.MeshBasicMaterial( { color: 0xf1f8ff, side: THREE.DoubleSide } );
+	var geometry = new THREE.CircleGeometry( radius, segments );
+	var circle = new THREE.Mesh(geometry, material);
+	circle.position.set( mouseX, mouseY, 0);
+	geometry.vertices.shift();
+	scene.add(circle);
+
 }
