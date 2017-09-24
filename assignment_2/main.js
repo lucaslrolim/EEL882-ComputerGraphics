@@ -106,39 +106,34 @@ var polygons; // store the polygons objects
 var startingPoint; // store the first vertex coordinates of the polygon being draw 
 var polyVertices; // store all vertex of the polygon being draw  
 var drawingLine; // draw a temporary line to orientate the user 
-
+var drawingPolygon; // draw a polygon line to orientate the user 
 
 var objectSelected; // true if user select (click) in an object
 var movingObject; // true if user is moving an object
+var selectedPolygon; // user can select a polygon to move or rotate
+var clickedPoint; // aplly this matrix when moving or rotating a polygon
 
+var transformationMatrix;
 
 function setup () {
 	renderer.setClearColor (0xf6f6f6, 1);
 	material = new THREE.LineBasicMaterial ( {color:0x23303c, depthWrite:false, linewidth : 1 } );
-
 	startingLineDraw = true;
 	drawingPoly = false;
 	polyVertices = []
 	polygons = []
-	objects = [];
 	objectSelected = false;
 	movingObject = false;
 
 }
 
 function mousePressed() {
-
 	// check if user select (click in) some polygon
-	for(i = 0; i < polygons.length; i++){
-		var clickedPoint = {"x":mouseX,"y":mouseY};
-		isInside(clickedPoint,polygons[i].vertices);
-	}
-
-
-	// Operate over the polygon the user select
-	if(objectSelected){
-		console.log("DO Something");
-		objectSelected = false;
+	for(var i = 0; i < polygons.length; i++){
+		clickedPoint = {"x":mouseX,"y":mouseY};
+		if(isInside(clickedPoint,getVertex(polygons[i].vertices))){
+			selectedPolygon = polygons[i];
+		}
 	}
 
 
@@ -152,7 +147,7 @@ function mousePressed() {
 		selected = line;
 		startingLineDraw = false;
 		var vertex = new THREE.Vector3 (mouseX,mouseY,0);
-		polyVertices.push({"x":mouseX,"y":mouseY,"Vector3":vertex})
+		polyVertices.push(vertex);
 	}
 	// Draw polygons
 	if(!objectSelected){
@@ -172,7 +167,7 @@ function mousePressed() {
 
 			// add all vertex of the polygon to the geometry
 			for(i = 0; i < polyVertices.length; i++){
-				polyGeometry.vertices.push(polyVertices[i].Vector3);
+				polyGeometry.vertices.push(polyVertices[i]);
 			}
 
 			// Draw the polygon using shade
@@ -183,15 +178,14 @@ function mousePressed() {
 			var geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
 			var material2 = new THREE.MeshBasicMaterial({ color: Math.random() * 0xffffff , clipIntersection: true, } );
 			var mesh = new THREE.Mesh(geometry, material2);
+
 			scene.add(mesh);
-			objects.push(mesh);
 			polygons.push(
 				{
-					"ThreePoly":drawingPoly,
-					"vertices":polyVertices
+					"ThreePoly":mesh,
+					"vertices":polyVertices.slice(1,) // remove duplicate of first vertex that we add before
 				}
 				);
-
 
 			// remove the baselines of the polygon
 			scene.remove(line);
@@ -203,7 +197,7 @@ function mousePressed() {
 		// if the polygon are not finished yet
 		else {
 			var vertex = new THREE.Vector3 (mouseX,mouseY,0);
-			polyVertices.push({"x":mouseX,"y":mouseY,"Vector3":vertex})
+			polyVertices.push(vertex);
 		}
 
 	}
@@ -212,13 +206,31 @@ function mousePressed() {
 
 function mouseDragged() {
 
+	// Operate over the polygon the user select
+	// User can move the polygon around the screen
+	if(objectSelected){
+		var dif_x = mouseX-clickedPoint.x;
+		var dif_y = mouseY-clickedPoint.y;
+		clickedPoint.x = mouseX;
+		clickedPoint.y = mouseY;
+		transformationMatrix = new THREE.Matrix4();
+		transformationMatrix.set(	1, 0, 0, dif_x,
+				0, 1, 0, dif_y,
+				0, 0, 1, 0,
+				0, 0, 0, 1
+		);
+		selectedPolygon.ThreePoly.geometry.applyMatrix (transformationMatrix);
+		for(var i = 0; i < selectedPolygon.vertices.length;i++){
+			selectedPolygon.vertices[i].applyMatrix4(transformationMatrix);
+		}
+		selectedPolygon.ThreePoly.updateMatrix();
+	}
 	
 }
 
 function mouseReleased() {
-
-
-
+	// drop the object that the user selects
+	objectSelected = false;
 }
 
 function mouseMoved (){
@@ -259,7 +271,7 @@ function endPoly(vertex){
     }
 }
 
-// check if user click inside a ploygon
+// check if user click inside a polygon
 function isInside(point, polyVertices) {
     var inside = false;
     for (var i = 0, j = polyVertices.length - 1; i < polyVertices.length; j = i++) {
@@ -274,10 +286,20 @@ function isInside(point, polyVertices) {
         }
     }
     if(inside){
-    	console.log("INSIDE");
     	objectSelected = true;
     }
 
     return inside;
 };
 
+
+
+function getVertex(polyVertices){
+	var fixVertices = [];
+	for(i = 0; i < polyVertices.length; i++){
+		if(polyVertices[i].z ===0){
+			fixVertices.push(polyVertices[i]);
+		}
+	}
+	return fixVertices;
+}
