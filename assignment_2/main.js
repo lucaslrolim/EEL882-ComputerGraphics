@@ -125,8 +125,10 @@ var selectedPolygon; // user can select a polygon to move or rotate
 var clickedPoint; // aplly this matrix when moving or rotating a polygon
 
 var userDoubleclick;
-
 var transformationMatrix;
+
+var addNail;
+
 
 function setup () {
 	renderer.setClearColor (0xf6f6f6, 1);
@@ -138,6 +140,7 @@ function setup () {
 	objectSelected = false;
 	movingObject = false;
 	userDoubleclick = false;
+	addNail = true;
 }
 
 function mousePressed() {
@@ -145,6 +148,7 @@ function mousePressed() {
 	for(var i = 0; i < polygons.length; i++){
 		clickedPoint = {"x":mouseX,"y":mouseY};
 		if(isInside(clickedPoint,getVertex(polygons[i].vertices))){
+			objectSelected = true;
 			selectedPolygon = polygons[i];
 		}
 	}
@@ -196,7 +200,9 @@ function mousePressed() {
 			polygons.push(
 				{
 					"ThreePoly":mesh,
-					"vertices":polyVertices.slice(1,) // remove duplicate of first vertex that we add before
+					"vertices":polyVertices.slice(1,), // remove duplicate of first vertex that we add before
+					"childs":[],
+					"nails":[]
 				}
 				);
 
@@ -237,9 +243,44 @@ function mouseDragged() {
 			selectedPolygon.vertices[i].applyMatrix4(transformationMatrix);
 		}
 		selectedPolygon.ThreePoly.updateMatrix();
+
+		// aplly to nails attached
+		if(selectedPolygon.nails.length > 0){
+			for(var i = 0;i < selectedPolygon.nails.length;i++){
+				selectedPolygon.nails[i].geometry.applyMatrix (transformationMatrix);
+			}
+		}
+
+		// apply the same transformation to childs
+		apllyToChilds(selectedPolygon);
+
+
+
 	}
 	
 }
+
+function apllyToChilds(polygon){
+		for (var i = 0; i < polygon.childs.length;i++){
+			var childPolygon = polygon.childs[i];
+			childPolygon.ThreePoly.geometry.applyMatrix (transformationMatrix);
+			for(var i = 0; i < childPolygon.vertices.length;i++){
+				childPolygon.vertices[i].applyMatrix4(transformationMatrix);
+			}
+			childPolygon.ThreePoly.updateMatrix();
+			if(childPolygon.nails.length > 0){
+				for(var i = 0;i < selectedPolygon.nails.length;i++){
+					childPolygon.nails[i].geometry.applyMatrix (transformationMatrix);
+				}
+			}
+			if(childPolygon.childs.length > 0){
+				apllyToChilds(childPolygon);
+			}
+
+		}
+}
+
+
 
 function mouseReleased() {
 	// drop the object that the user selects
@@ -257,6 +298,49 @@ function mouseMoved (){
 		drawingLine = new THREE.Line (geometry, material);
 		scene.add (drawingLine);
 	}
+}
+
+function doubleClick(){
+	// clear things that mousePressed starts to do on the first click
+	polyVertices = [];
+	startingLineDraw = true;
+	scene.remove(drawingLine);
+
+	// add nail
+	var radius   = 5;
+	var segments = 64;
+	var material = new THREE.MeshBasicMaterial( { color: 0xf1f8ff, side: THREE.DoubleSide } );
+	var geometry = new THREE.CircleGeometry( radius, segments );
+	var circle = new THREE.Mesh(geometry, material);
+	circle.position.set( mouseX, mouseY, 0);
+	geometry.vertices.shift();
+	
+	scene.add(circle);
+
+
+	// Detectet polygons in the point
+	var clickedPolygons = []
+	var polygonsIndex = []
+	if(polygons.length > 0){
+		for(var i = 0; i < polygons.length; i++){
+			clickedPoint = {"x":mouseX,"y":mouseY};
+			if(isInside(clickedPoint,getVertex(polygons[i].vertices))){
+				clickedPolygons.push(polygons[i]);
+				polygonsIndex.push(i);
+			}
+		}
+
+		for (var i = 0; i < clickedPolygons.length; i++){
+			var temp = clickedPolygons.slice(i+1,);
+			for(var j = 0; j < temp.length;j++){
+				polygons[polygonsIndex[i]].childs.push(temp[j]);
+			}
+			polygons[polygonsIndex[i]].childs = polygons[polygonsIndex[i]].childs.filter( onlyUnique );
+			
+		}
+		clickedPolygons[0].nails.push(circle);	
+	}
+	console.log(clickedPolygons);
 }
 
 init();
@@ -298,10 +382,6 @@ function isInside(point, polyVertices) {
         	inside = !inside;
         }
     }
-    if(inside){
-    	objectSelected = true;
-    }
-
     return inside;
 };
 
@@ -317,20 +397,8 @@ function getVertex(polyVertices){
 	return fixVertices;
 }
 
-function doubleClick(){
-	// clear things that mousePressed starts to do on the first click
-	polyVertices = [];
-	startingLineDraw = true;
-	scene.remove(drawingLine);
 
-	// add nail
-	var radius   = 5;
-	var segments = 64;
-	var material = new THREE.MeshBasicMaterial( { color: 0xf1f8ff, side: THREE.DoubleSide } );
-	var geometry = new THREE.CircleGeometry( radius, segments );
-	var circle = new THREE.Mesh(geometry, material);
-	circle.position.set( mouseX, mouseY, 0);
-	geometry.vertices.shift();
-	scene.add(circle);
-
+// return only unique values in an array
+function onlyUnique(value, index, self) { 
+    return self.indexOf(value) === index;
 }
