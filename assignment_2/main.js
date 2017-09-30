@@ -264,21 +264,22 @@ function apllyToChilds(polygon){
 		for (var i = 0; i < polygon.childs.length;i++){
 			var childPolygon = polygon.childs[i];
 			childPolygon.ThreePoly.geometry.applyMatrix (transformationMatrix);
-			for(var i = 0; i < childPolygon.vertices.length;i++){
-				childPolygon.vertices[i].applyMatrix4(transformationMatrix);
+			for(var j = 0; j < childPolygon.vertices.length;j++){
+				childPolygon.vertices[j].applyMatrix4(transformationMatrix);
 			}
 			childPolygon.ThreePoly.updateMatrix();
+
 			if(childPolygon.nails.length > 0){
-				for(var i = 0;i < selectedPolygon.nails.length;i++){
-					childPolygon.nails[i].geometry.applyMatrix (transformationMatrix);
+				for(var k = 0;k < childPolygon.nails.length;k++){
+					childPolygon.nails[k].geometry.applyMatrix (transformationMatrix);
 				}
 			}
-			if(childPolygon.childs.length > 0){
-				apllyToChilds(childPolygon);
-			}
+
+			apllyToChilds(childPolygon);
 
 		}
 }
+
 
 
 
@@ -313,7 +314,7 @@ function doubleClick(){
 	var geometry = new THREE.CircleGeometry( radius, segments );
 	var circle = new THREE.Mesh(geometry, material);
 	circle.position.set( mouseX, mouseY, 0);
-	geometry.vertices.shift();
+	// geometry.vertices.shift();
 	
 	scene.add(circle);
 
@@ -322,14 +323,13 @@ function doubleClick(){
 	var clickedPolygons = []
 	var polygonsIndex = []
 	if(polygons.length > 0){
+		clickedPoint = {"x":mouseX,"y":mouseY};
 		for(var i = 0; i < polygons.length; i++){
-			clickedPoint = {"x":mouseX,"y":mouseY};
 			if(isInside(clickedPoint,getVertex(polygons[i].vertices))){
 				clickedPolygons.push(polygons[i]);
 				polygonsIndex.push(i);
 			}
 		}
-
 		for (var i = 0; i < clickedPolygons.length; i++){
 			var temp = clickedPolygons.slice(i+1,);
 			for(var j = 0; j < temp.length;j++){
@@ -340,7 +340,7 @@ function doubleClick(){
 		}
 		clickedPolygons[0].nails.push(circle);	
 	}
-	console.log(clickedPolygons);
+	console.log(polygons);
 }
 
 init();
