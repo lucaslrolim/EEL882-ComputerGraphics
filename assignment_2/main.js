@@ -202,7 +202,9 @@ function mousePressed() {
 					"ThreePoly":mesh,
 					"vertices":polyVertices.slice(1,), // remove duplicate of first vertex that we add before
 					"childs":[],
-					"nails":[]
+					"father":[],
+					"nails":[],
+					"index": polygons.length + 1
 				}
 				);
 
@@ -227,7 +229,7 @@ function mouseDragged() {
 
 	// Operate over the polygon the user select
 	// User can move the polygon around the screen
-	if(objectSelected){
+	if(objectSelected && selectedPolygon.father.length === 0){
 		var dif_x = mouseX-clickedPoint.x;
 		var dif_y = mouseY-clickedPoint.y;
 		clickedPoint.x = mouseX;
@@ -260,27 +262,29 @@ function mouseDragged() {
 	
 }
 
+// apply matrix transformation to child polygons
+
 function apllyToChilds(polygon){
 		for (var i = 0; i < polygon.childs.length;i++){
 			var childPolygon = polygon.childs[i];
-			childPolygon.ThreePoly.geometry.applyMatrix (transformationMatrix);
-			for(var j = 0; j < childPolygon.vertices.length;j++){
-				childPolygon.vertices[j].applyMatrix4(transformationMatrix);
-			}
-			childPolygon.ThreePoly.updateMatrix();
-
-			if(childPolygon.nails.length > 0){
-				for(var k = 0;k < childPolygon.nails.length;k++){
-					childPolygon.nails[k].geometry.applyMatrix (transformationMatrix);
+			var maxfather = Math.max.apply(Math,childPolygon.father);
+			if(polygon.index >  maxfather){
+				childPolygon.ThreePoly.geometry.applyMatrix (transformationMatrix);
+				for(var j = 0; j < childPolygon.vertices.length;j++){
+					childPolygon.vertices[j].applyMatrix4(transformationMatrix);
 				}
+				childPolygon.ThreePoly.updateMatrix();
+
+				if(childPolygon.nails.length > 0){
+					for(var k = 0;k < childPolygon.nails.length;k++){
+						childPolygon.nails[k].geometry.applyMatrix (transformationMatrix);
+					}
+				}
+
+				apllyToChilds(childPolygon);
 			}
-
-			apllyToChilds(childPolygon);
-
 		}
 }
-
-
 
 
 function mouseReleased() {
@@ -321,26 +325,31 @@ function doubleClick(){
 
 	// Detectet polygons in the point
 	var clickedPolygons = []
-	var polygonsIndex = []
 	if(polygons.length > 0){
 		clickedPoint = {"x":mouseX,"y":mouseY};
 		for(var i = 0; i < polygons.length; i++){
 			if(isInside(clickedPoint,getVertex(polygons[i].vertices))){
-				clickedPolygons.push(polygons[i]);
-				polygonsIndex.push(i);
+				clickedPolygons.push({"polygon":polygons[i],"index":i});
 			}
 		}
 		for (var i = 0; i < clickedPolygons.length; i++){
 			var temp = clickedPolygons.slice(i+1,);
 			for(var j = 0; j < temp.length;j++){
-				polygons[polygonsIndex[i]].childs.push(temp[j]);
+				//adding childs
+				polygons[clickedPolygons[i].index].childs.push(temp[j].polygon);
+				// adding father to childs
+				polygons[temp[j].index].father.push(clickedPolygons[i].index);
+
 			}
-			polygons[polygonsIndex[i]].childs = polygons[polygonsIndex[i]].childs.filter( onlyUnique );
-			
+			polygons[clickedPolygons[i].index].childs = polygons[clickedPolygons[i].index].childs.filter( onlyUnique );
+
 		}
-		clickedPolygons[0].nails.push(circle);	
+
+
+
+		clickedPolygons[0].polygon.nails.push(circle);	
 	}
-	console.log(polygons);
+
 }
 
 init();
@@ -402,3 +411,7 @@ function getVertex(polyVertices){
 function onlyUnique(value, index, self) { 
     return self.indexOf(value) === index;
 }
+
+
+
+
