@@ -240,19 +240,26 @@ function mouseDragged() {
 				0, 0, 1, 0,
 				0, 0, 0, 1
 		);
+		// var ang = 0.01
+		// transformationMatrix.set(	Math.cos(0.02), -Math.sin(0.02), 0, 0,
+		// 		Math.sin(2), Math.cos(2), 0, 0,
+		// 		0, 0, 1, 0,
+		// 		0, 0, 0, 1
+		// );
 		selectedPolygon.ThreePoly.geometry.applyMatrix (transformationMatrix);
 		for(var i = 0; i < selectedPolygon.vertices.length;i++){
 			selectedPolygon.vertices[i].applyMatrix4(transformationMatrix);
 		}
-		selectedPolygon.ThreePoly.updateMatrix();
 
 		// aplly to nails attached
 		if(selectedPolygon.nails.length > 0){
 			for(var i = 0;i < selectedPolygon.nails.length;i++){
 				selectedPolygon.nails[i].geometry.applyMatrix (transformationMatrix);
+				selectedPolygon.nails[i].center.applyMatrix4 (transformationMatrix);
 			}
 		}
 
+		selectedPolygon.ThreePoly.updateMatrix();
 		// apply the same transformation to childs
 		apllyToChilds(selectedPolygon);
 
@@ -273,14 +280,14 @@ function apllyToChilds(polygon){
 				for(var j = 0; j < childPolygon.vertices.length;j++){
 					childPolygon.vertices[j].applyMatrix4(transformationMatrix);
 				}
-				childPolygon.ThreePoly.updateMatrix();
-
+				
 				if(childPolygon.nails.length > 0){
 					for(var k = 0;k < childPolygon.nails.length;k++){
 						childPolygon.nails[k].geometry.applyMatrix (transformationMatrix);
+						childPolygon.nails[k].center.applyMatrix4 (transformationMatrix);
 					}
 				}
-
+				childPolygon.ThreePoly.updateMatrix();
 				apllyToChilds(childPolygon);
 			}
 		}
@@ -306,48 +313,84 @@ function mouseMoved (){
 }
 
 function doubleClick(){
+	console.log(polygons);
 	// clear things that mousePressed starts to do on the first click
 	polyVertices = [];
 	startingLineDraw = true;
 	scene.remove(drawingLine);
 
-	// add nail
-	var radius   = 5;
-	var segments = 64;
-	var material = new THREE.MeshBasicMaterial( { color: 0xf1f8ff, side: THREE.DoubleSide } );
-	var geometry = new THREE.CircleGeometry( radius, segments );
-	var circle = new THREE.Mesh(geometry, material);
-	circle.position.set( mouseX, mouseY, 0);
-	// geometry.vertices.shift();
-	
-	scene.add(circle);
+	// check if we need to add or remove a nail
+	var existNail = false;
+	var nailLocation = {"polygonIndex":-1,"nailIndex":-1}; // only use that if we will remove a nail
 
+	clickedPoint = {"x":mouseX,"y":mouseY};
 
-	// Detectet polygons in the point
-	var clickedPolygons = []
-	if(polygons.length > 0){
-		clickedPoint = {"x":mouseX,"y":mouseY};
-		for(var i = 0; i < polygons.length; i++){
-			if(isInside(clickedPoint,getVertex(polygons[i].vertices))){
-				clickedPolygons.push({"polygon":polygons[i],"index":i});
+	for(var i = 0; i < polygons.length; i++){
+		for(var j = 0; j < polygons[i].nails.length; j++){
+
+			if(isNear(clickedPoint,polygons[i].nails[j])){
+				existNail = true;
+				nailLocation.polygonIndex = i;
+				nailLocation.nailIndex = j;
 			}
 		}
-		for (var i = 0; i < clickedPolygons.length; i++){
-			var temp = clickedPolygons.slice(i+1,);
+	}
+
+	if(!existNail){
+		// create nail object
+		var radius   = 5;
+		var segments = 64;
+		var material = new THREE.MeshBasicMaterial( { color: 0xf1f8ff, side: THREE.DoubleSide } );
+		var geometry = new THREE.CircleGeometry( radius, segments );
+		var circle = new THREE.Mesh(geometry, material);
+		circle.position.set( mouseX, mouseY, 0);
+		// Detectet polygons in the point
+		var clickedPolygons = []
+		if(polygons.length > 0){
+
+			for(var i = 0; i < polygons.length; i++){
+				if(isInside(clickedPoint,getVertex(polygons[i].vertices))){
+					clickedPolygons.push({"polygon":polygons[i],"index":i});
+				}
+			}
+			// adding child and father relationships
+			var childsAdded = 0;
+			var temp = clickedPolygons.slice(1,);
 			for(var j = 0; j < temp.length;j++){
-				//adding childs
-				polygons[clickedPolygons[i].index].childs.push(temp[j].polygon);
-				// adding father to childs
-				polygons[temp[j].index].father.push(clickedPolygons[i].index);
+				// A polygon must have have only one father
+				if(polygons[temp[j].index].father.length === 0){
+					//adding childs
+					polygons[clickedPolygons[0].index].childs.push(temp[j].polygon);
+					// adding father to childs
+					polygons[temp[j].index].father.push(clickedPolygons[0].index);
 
+					childsAdded +=1;
+				}
 			}
-			polygons[clickedPolygons[i].index].childs = polygons[clickedPolygons[i].index].childs.filter( onlyUnique );
-
+			
+		}
+		if(childsAdded > 0){
+			polygons[clickedPolygons[0].index].childs = polygons[clickedPolygons[0].index].childs.filter( onlyUnique );
+			// save the operation to delete relationships when removing the Nail
+			circle["operation"] = {"father":clickedPolygons[0],"childs":clickedPolygons.slice(1,)};
+			circle["center"] =  new THREE.Vector3 (mouseX,mouseY,0);
+			scene.add(circle);
+			clickedPolygons[0].polygon.nails.push(circle);	
+		}
+		else{
+			console.log("ERROR! A polygon must have only one father");
 		}
 
-
-
-		clickedPolygons[0].polygon.nails.push(circle);	
+	}
+	else{
+		var  operation = polygons[nailLocation.polygonIndex].nails[nailLocation.nailIndex].operation;
+		for(var i = 0 ;i < operation.childs.length; i ++){
+			polygons[nailLocation.polygonIndex].childs = polygons[nailLocation.polygonIndex].childs.splice(operation.childs[i].index, 1);
+			polygons[operation.childs[i].index].father = polygons[operation.childs[i].index].father.filter(item => item !== nailLocation.polygonIndex);
+			// polygons[operation.childs[i].index].father = polygons[operation.childs[i].index].father.splice(nailLocation.polygonIndex, 1);
+		}
+		polygons[nailLocation.polygonIndex].nails = polygons[nailLocation.polygonIndex].nails.splice(nailLocation.nailIndex, 1);
+		scene.remove(polygons[nailLocation.polygonIndex].nails[nailLocation.nailIndex]);
 	}
 
 }
@@ -394,8 +437,20 @@ function isInside(point, polyVertices) {
     return inside;
 };
 
+// check if user click near a point
 
-
+function isNear(point,nail){
+    var range = 15;
+    var dist = range;
+    console.log(nail.center);
+    var x_dif = point.x - nail.center.x;
+    var y_dif = point.y - nail.center.y;
+    var dist = Math.sqrt(Math.pow((x_dif),2)+Math.pow((y_dif),2));
+    if(dist < range){
+        return true;
+    }
+    return false;
+}
 function getVertex(polyVertices){
 	var fixVertices = [];
 	for(i = 0; i < polyVertices.length; i++){
