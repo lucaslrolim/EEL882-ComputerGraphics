@@ -120,14 +120,13 @@ var drawingLine; // draw a temporary line to orientate the user
 var drawingPolygon; // draw a polygon line to orientate the user 
 
 var objectSelected; // true if user select (click) in an object
-var movingObject; // true if user is moving an object
 var selectedPolygon; // user can select a polygon to move or rotate
 var clickedPoint; // aplly this matrix when moving or rotating a polygon
 
-var userDoubleclick;
-var transformationMatrix;
+var transformationMatrix; // Matriz that we will use to change coordenate systems
+var rotationAngle; // Angle to rotate the polygons when necessary
 
-var addNail;
+
 
 
 function setup () {
@@ -138,9 +137,6 @@ function setup () {
 	polyVertices = []
 	polygons = []
 	objectSelected = false;
-	movingObject = false;
-	userDoubleclick = false;
-	addNail = true;
 }
 
 function mousePressed() {
@@ -152,7 +148,6 @@ function mousePressed() {
 			selectedPolygon = polygons[i];
 		}
 	}
-
 
 	// Set the first vertex of a polygon
 	if(startingLineDraw && !objectSelected){
@@ -197,6 +192,9 @@ function mousePressed() {
 			var mesh = new THREE.Mesh(geometry, material2);
 
 			scene.add(mesh);
+
+			// Store polygon informations in an object that we will use in future operations (eg. rotation and translation)
+			
 			polygons.push(
 				{
 					"ThreePoly":mesh,
@@ -205,7 +203,7 @@ function mousePressed() {
 					"father":[],
 					"fatherNail": null,
 					"nails":[],
-					"index": polygons.length + 1
+					"index": polygons.length
 				}
 				);
 
@@ -226,13 +224,10 @@ function mousePressed() {
 
 }
 
-//////////////////
 
 
 function mouseDragged() {
-	// Operate over the polygon the user select
-	// User can move the polygon around the screen
-
+	// We translate if the polygon is not nailed and rotate otherwise
 	if(objectSelected && selectedPolygon.father.length === 0){
 		var dif_x = mouseX-clickedPoint.x;
 		var dif_y = mouseY-clickedPoint.y;
@@ -254,98 +249,6 @@ function mouseDragged() {
 	
 }
 
-function rotatePolygon(){
-	// Translate polygon to origin
-	transformationMatrix = new THREE.Matrix4();
-	transformationMatrix.set(1, 0, 0, -selectedPolygon.fatherNail.center.x,
-				0, 1, 0, -selectedPolygon.fatherNail.center.y,
-				0, 0, 1, 0,
-				0, 0, 0, 1
-	);
-	movePolygon();
-
-	// finding rotation angle
-
-	vec1 = new THREE.Vector3(pmouseX - selectedPolygon.fatherNail.center.x, pmouseY - selectedPolygon.fatherNail.center.y, 0)
-	vec2 = new THREE.Vector3(mouseX - selectedPolygon.fatherNail.center.x, mouseY - selectedPolygon.fatherNail.center.y, 0)
-	var rotationAngle = vec1.angleTo(vec2);
-	var orientation = (vec1.cross(vec2)).z;
-	if(orientation > 0){
-		rotationAngle = -rotationAngle;
-	}
-	
-	// Rotating
-	transformationMatrix = new THREE.Matrix4();
-	transformationMatrix.set(Math.cos(rotationAngle), Math.sin(rotationAngle), 0, 0,
-				-Math.sin(rotationAngle), Math.cos(rotationAngle), 0, 0,
-				0, 0, 1, 0,
-				0, 0, 0, 1
-	);
-
-	movePolygon();
-
-	// back to old system coordinat	es
-	transformationMatrix = new THREE.Matrix4();
-	transformationMatrix.set(1, 0, 0, selectedPolygon.fatherNail.center.x,
-				0, 1, 0, selectedPolygon.fatherNail.center.y,
-				0, 0, 1, 0,
-				0, 0, 0, 1
-	);
-	movePolygon();
-}
-
-
-// Translade the selected Polygon
-
-function movePolygon(){
-
-		selectedPolygon.ThreePoly.geometry.applyMatrix (transformationMatrix);
-		for(var i = 0; i < selectedPolygon.vertices.length;i++){
-			selectedPolygon.vertices[i].applyMatrix4(transformationMatrix);
-		}
-
-		// aplly to nails attached
-		if(selectedPolygon.nails.length > 0){
-			for(var i = 0;i < selectedPolygon.nails.length;i++){
-				selectedPolygon.nails[i].geometry.applyMatrix (transformationMatrix);
-				selectedPolygon.nails[i].center.applyMatrix4 (transformationMatrix);
-			}
-		}
-
-		selectedPolygon.ThreePoly.updateMatrix();
-		// apply the same transformation to childs
-		apllyToChilds(selectedPolygon);
-
-}
-
-// apply matrix transformation to child polygons
-
-function apllyToChilds(polygon){
-		for (var i = 0; i < polygon.childs.length;i++){
-			var childPolygon = polygon.childs[i];
-			var maxfather = Math.max.apply(Math,childPolygon.father);
-			if(polygon.index >  maxfather){
-				childPolygon.ThreePoly.geometry.applyMatrix (transformationMatrix);
-				for(var j = 0; j < childPolygon.vertices.length;j++){
-					childPolygon.vertices[j].applyMatrix4(transformationMatrix);
-				}
-				
-				if(childPolygon.nails.length > 0){
-					for(var k = 0;k < childPolygon.nails.length;k++){
-						childPolygon.nails[k].geometry.applyMatrix (transformationMatrix);
-						childPolygon.nails[k].center.applyMatrix4 (transformationMatrix);
-					}
-				}
-				childPolygon.ThreePoly.updateMatrix();
-				apllyToChilds(childPolygon);
-			}
-		}
-}
-
-
-///////////////////////////////////////////
-
-
 
 function mouseReleased() {
 	// drop the object that the user selects
@@ -353,6 +256,7 @@ function mouseReleased() {
 }
 
 function mouseMoved (){
+	// draw a temporary line when moving the mouse and drawing a polygon
 	if(polyVertices.length != 0 && !objectSelected){
 		var initPoint = new THREE.Vector3 (polyVertices[polyVertices.length-1].x,polyVertices[polyVertices.length-1].y,0);
 		var point = new THREE.Vector3 (mouseX,mouseY,0);
@@ -366,13 +270,13 @@ function mouseMoved (){
 }
 
 function doubleClick(){
-	console.log(polygons);
 	// clear things that mousePressed starts to do on the first click
 	polyVertices = [];
 	startingLineDraw = true;
 	scene.remove(drawingLine);
 
 	// check if we need to add or remove a nail
+
 	var existNail = false;
 	var nailLocation = {"polygonIndex":-1,"nailIndex":-1}; // only use that if we will remove a nail
 
@@ -380,7 +284,6 @@ function doubleClick(){
 
 	for(var i = 0; i < polygons.length; i++){
 		for(var j = 0; j < polygons[i].nails.length; j++){
-
 			if(isNear(clickedPoint,polygons[i].nails[j])){
 				existNail = true;
 				nailLocation.polygonIndex = i;
@@ -436,15 +339,28 @@ function doubleClick(){
 
 	}
 	else{
+		// Removing nail relationships
 		var  operation = polygons[nailLocation.polygonIndex].nails[nailLocation.nailIndex].operation;
-		for(var i = 0 ;i < operation.childs.length; i ++){
-			polygons[nailLocation.polygonIndex].childs = polygons[nailLocation.polygonIndex].childs.splice(operation.childs[i].index, 1);
-			polygons[operation.childs[i].index].father = polygons[operation.childs[i].index].father.filter(item => item !== nailLocation.polygonIndex);
-			polygons[operation.childs[i].index].fatherNail = null;
-			// polygons[operation.childs[i].index].father = polygons[operation.childs[i].index].father.splice(nailLocation.polygonIndex, 1);
+		var tempChild = [];
+		var removeChildIndex = []
+		for(var j =0;j< operation.childs.length;j++){
+			removeChildIndex.push(operation.childs[j].index);
 		}
-		polygons[nailLocation.polygonIndex].nails = polygons[nailLocation.polygonIndex].nails.splice(nailLocation.nailIndex, 1);
+		console.log(polygons[nailLocation.polygonIndex].childs);
+		console.log(operation.childs);
+		for(var k = 0; k < polygons[nailLocation.polygonIndex].childs.length; k++){
+			if(!(removeChildIndex.includes(polygons[nailLocation.polygonIndex].childs[k].index))){
+				tempChild.push(polygons[nailLocation.polygonIndex].childs[k]);
+			}
+		} 
+		polygons[nailLocation.polygonIndex].childs = tempChild;
+
+		for(var i = 0 ;i < operation.childs.length; i ++){	
+			polygons[operation.childs[i].index].father = [];
+			polygons[operation.childs[i].index].fatherNail = null;
+		}
 		scene.remove(polygons[nailLocation.polygonIndex].nails[nailLocation.nailIndex]);
+
 	}
 
 }
@@ -520,6 +436,99 @@ function onlyUnique(value, index, self) {
     return self.indexOf(value) === index;
 }
 
+//------------------------------------------------------------
+//
+// Polygon transformation functions
+//
+//------------------------------------------------------------
 
 
+function rotatePolygon(){
+	// Translate polygon to origin
+	transformationMatrix = new THREE.Matrix4();
+	transformationMatrix.set(1, 0, 0, -selectedPolygon.fatherNail.center.x,
+				0, 1, 0, -selectedPolygon.fatherNail.center.y,
+				0, 0, 1, 0,
+				0, 0, 0, 1
+	);
+	movePolygon();
 
+	// finding rotation angle
+
+	vec1 = new THREE.Vector3(pmouseX - selectedPolygon.fatherNail.center.x, pmouseY - selectedPolygon.fatherNail.center.y, 0)
+	vec2 = new THREE.Vector3(mouseX - selectedPolygon.fatherNail.center.x, mouseY - selectedPolygon.fatherNail.center.y, 0)
+	rotationAngle = vec1.angleTo(vec2);
+	var orientation = (vec1.cross(vec2)).z;
+	if(orientation > 0){
+		rotationAngle = -rotationAngle;
+	}
+	
+	// Rotating
+	transformationMatrix = new THREE.Matrix4();
+	transformationMatrix.set(Math.cos(rotationAngle), Math.sin(rotationAngle), 0, 0,
+				-Math.sin(rotationAngle), Math.cos(rotationAngle), 0, 0,
+				0, 0, 1, 0,
+				0, 0, 0, 1
+	);
+
+	movePolygon();
+
+	// back to old system coordinat	es
+	transformationMatrix = new THREE.Matrix4();
+	transformationMatrix.set(1, 0, 0, selectedPolygon.fatherNail.center.x,
+				0, 1, 0, selectedPolygon.fatherNail.center.y,
+				0, 0, 1, 0,
+				0, 0, 0, 1
+	);
+	movePolygon();
+}
+
+
+// Translade the selected Polygon
+
+function movePolygon(){
+
+		selectedPolygon.ThreePoly.geometry.applyMatrix (transformationMatrix);
+		for(var i = 0; i < selectedPolygon.vertices.length;i++){
+			selectedPolygon.vertices[i].applyMatrix4(transformationMatrix);
+		}
+
+		// aplly to nails attached
+		if(selectedPolygon.nails.length > 0){
+			for(var i = 0;i < selectedPolygon.nails.length;i++){
+				selectedPolygon.nails[i].geometry.applyMatrix (transformationMatrix);
+				selectedPolygon.nails[i].center.applyMatrix4 (transformationMatrix);
+			}
+		}
+
+		selectedPolygon.ThreePoly.updateMatrix();
+
+		// apply the same transformation to childs
+		apllyToChilds(selectedPolygon);
+
+}
+
+// apply matrix transformation to child polygons
+
+function apllyToChilds(polygon){
+		for (var i = 0; i < polygon.childs.length;i++){
+			var childPolygon = polygon.childs[i];
+			childPolygon.ThreePoly.geometry.applyMatrix (transformationMatrix);
+			for(var j = 0; j < childPolygon.vertices.length;j++){
+				childPolygon.vertices[j].applyMatrix4(transformationMatrix);
+			}
+				
+			if(childPolygon.nails.length > 0){
+				for(var k = 0;k < childPolygon.nails.length;k++){
+					childPolygon.nails[k].geometry.applyMatrix (transformationMatrix);
+					childPolygon.nails[k].center.applyMatrix4 (transformationMatrix);
+				}
+			}
+			childPolygon.ThreePoly.updateMatrix();
+			apllyToChilds(childPolygon);
+			
+		}
+}
+
+
+///////////////////////////////////////////
