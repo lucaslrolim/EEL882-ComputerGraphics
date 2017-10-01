@@ -203,6 +203,7 @@ function mousePressed() {
 					"vertices":polyVertices.slice(1,), // remove duplicate of first vertex that we add before
 					"childs":[],
 					"father":[],
+					"fatherNail": null,
 					"nails":[],
 					"index": polygons.length + 1
 				}
@@ -225,10 +226,13 @@ function mousePressed() {
 
 }
 
-function mouseDragged() {
+//////////////////
 
+
+function mouseDragged() {
 	// Operate over the polygon the user select
 	// User can move the polygon around the screen
+
 	if(objectSelected && selectedPolygon.father.length === 0){
 		var dif_x = mouseX-clickedPoint.x;
 		var dif_y = mouseY-clickedPoint.y;
@@ -240,12 +244,61 @@ function mouseDragged() {
 				0, 0, 1, 0,
 				0, 0, 0, 1
 		);
-		// var ang = 0.01
-		// transformationMatrix.set(	Math.cos(0.02), -Math.sin(0.02), 0, 0,
-		// 		Math.sin(2), Math.cos(2), 0, 0,
-		// 		0, 0, 1, 0,
-		// 		0, 0, 0, 1
-		// );
+		movePolygon();
+
+	}
+	if(objectSelected && selectedPolygon.father.length != 0){
+		rotatePolygon();
+
+	}
+	
+}
+
+function rotatePolygon(){
+	// Translate polygon to origin
+	transformationMatrix = new THREE.Matrix4();
+	transformationMatrix.set(1, 0, 0, -selectedPolygon.fatherNail.center.x,
+				0, 1, 0, -selectedPolygon.fatherNail.center.y,
+				0, 0, 1, 0,
+				0, 0, 0, 1
+	);
+	movePolygon();
+
+	// finding rotation angle
+
+	vec1 = new THREE.Vector3(pmouseX - selectedPolygon.fatherNail.center.x, pmouseY - selectedPolygon.fatherNail.center.y, 0)
+	vec2 = new THREE.Vector3(mouseX - selectedPolygon.fatherNail.center.x, mouseY - selectedPolygon.fatherNail.center.y, 0)
+	var rotationAngle = vec1.angleTo(vec2);
+	var orientation = (vec1.cross(vec2)).z;
+	if(orientation > 0){
+		rotationAngle = -rotationAngle;
+	}
+	
+	// Rotating
+	transformationMatrix = new THREE.Matrix4();
+	transformationMatrix.set(Math.cos(rotationAngle), Math.sin(rotationAngle), 0, 0,
+				-Math.sin(rotationAngle), Math.cos(rotationAngle), 0, 0,
+				0, 0, 1, 0,
+				0, 0, 0, 1
+	);
+
+	movePolygon();
+
+	// back to old system coordinat	es
+	transformationMatrix = new THREE.Matrix4();
+	transformationMatrix.set(1, 0, 0, selectedPolygon.fatherNail.center.x,
+				0, 1, 0, selectedPolygon.fatherNail.center.y,
+				0, 0, 1, 0,
+				0, 0, 0, 1
+	);
+	movePolygon();
+}
+
+
+// Translade the selected Polygon
+
+function movePolygon(){
+
 		selectedPolygon.ThreePoly.geometry.applyMatrix (transformationMatrix);
 		for(var i = 0; i < selectedPolygon.vertices.length;i++){
 			selectedPolygon.vertices[i].applyMatrix4(transformationMatrix);
@@ -263,10 +316,6 @@ function mouseDragged() {
 		// apply the same transformation to childs
 		apllyToChilds(selectedPolygon);
 
-
-
-	}
-	
 }
 
 // apply matrix transformation to child polygons
@@ -292,6 +341,10 @@ function apllyToChilds(polygon){
 			}
 		}
 }
+
+
+///////////////////////////////////////////
+
 
 
 function mouseReleased() {
@@ -363,7 +416,7 @@ function doubleClick(){
 					polygons[clickedPolygons[0].index].childs.push(temp[j].polygon);
 					// adding father to childs
 					polygons[temp[j].index].father.push(clickedPolygons[0].index);
-
+					polygons[temp[j].index].fatherNail = circle;
 					childsAdded +=1;
 				}
 			}
@@ -387,6 +440,7 @@ function doubleClick(){
 		for(var i = 0 ;i < operation.childs.length; i ++){
 			polygons[nailLocation.polygonIndex].childs = polygons[nailLocation.polygonIndex].childs.splice(operation.childs[i].index, 1);
 			polygons[operation.childs[i].index].father = polygons[operation.childs[i].index].father.filter(item => item !== nailLocation.polygonIndex);
+			polygons[operation.childs[i].index].fatherNail = null;
 			// polygons[operation.childs[i].index].father = polygons[operation.childs[i].index].father.splice(nailLocation.polygonIndex, 1);
 		}
 		polygons[nailLocation.polygonIndex].nails = polygons[nailLocation.polygonIndex].nails.splice(nailLocation.nailIndex, 1);
@@ -442,7 +496,6 @@ function isInside(point, polyVertices) {
 function isNear(point,nail){
     var range = 15;
     var dist = range;
-    console.log(nail.center);
     var x_dif = point.x - nail.center.x;
     var y_dif = point.y - nail.center.y;
     var dist = Math.sqrt(Math.pow((x_dif),2)+Math.pow((y_dif),2));
