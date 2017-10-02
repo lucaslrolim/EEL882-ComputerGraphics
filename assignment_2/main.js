@@ -13,8 +13,8 @@ function init() {
 	scene = new THREE.Scene();
 
 	// Will use the whole window for the webgl canvas
-	width = window.innerWidth;
-	height = window.innerHeight;
+	width = window.innerWidth - 5;
+	height = window.innerHeight -5;
 
 	// Orthogonal camera for 2D drawing
 	camera = new THREE.OrthographicCamera( 0, width, 0, height, -height, height );
@@ -85,8 +85,8 @@ function init() {
 // Reshape callback
 //
 function resize() {
-	width = window.innerWidth;
-	height = window.innerHeight;
+	width = window.innerWidth -5;
+	height = window.innerHeight -5;
 	camera.right = width;
 	camera.bottom = height;
 	camera.updateProjectionMatrix();
@@ -299,11 +299,18 @@ function doubleClick(){
 		var material = new THREE.MeshBasicMaterial( { color: 0xf1f8ff, side: THREE.DoubleSide } );
 		var geometry = new THREE.CircleGeometry( radius, segments );
 		var circle = new THREE.Mesh(geometry, material);
-		circle.position.set( mouseX, mouseY, 0);
+	    var m = new THREE.Matrix4();
+		m.set(	1, 0, 0, mouseX,
+				0, 1, 0, mouseY,
+				0, 0, 1, 0,
+				0, 0, 0, 1
+		);
+	    geometry.applyMatrix(m);
+
 		// Detectet polygons in the point
 		var clickedPolygons = []
-		if(polygons.length > 0){
 
+		if(polygons.length > 0){
 			for(var i = 0; i < polygons.length; i++){
 				if(isInside(clickedPoint,getVertex(polygons[i].vertices))){
 					clickedPolygons.push({"polygon":polygons[i],"index":i});
@@ -338,16 +345,14 @@ function doubleClick(){
 		}
 
 	}
+	// Removing nail relationships
 	else{
-		// Removing nail relationships
 		var  operation = polygons[nailLocation.polygonIndex].nails[nailLocation.nailIndex].operation;
 		var tempChild = [];
 		var removeChildIndex = []
 		for(var j =0;j< operation.childs.length;j++){
 			removeChildIndex.push(operation.childs[j].index);
 		}
-		console.log(polygons[nailLocation.polygonIndex].childs);
-		console.log(operation.childs);
 		for(var k = 0; k < polygons[nailLocation.polygonIndex].childs.length; k++){
 			if(!(removeChildIndex.includes(polygons[nailLocation.polygonIndex].childs[k].index))){
 				tempChild.push(polygons[nailLocation.polygonIndex].childs[k]);
@@ -410,7 +415,7 @@ function isInside(point, polyVertices) {
 // check if user click near a point
 
 function isNear(point,nail){
-    var range = 15;
+    var range = 25;
     var dist = range;
     var x_dif = point.x - nail.center.x;
     var y_dif = point.y - nail.center.y;
@@ -442,7 +447,6 @@ function onlyUnique(value, index, self) {
 //
 //------------------------------------------------------------
 
-
 function rotatePolygon(){
 	// Translate polygon to origin
 	transformationMatrix = new THREE.Matrix4();
@@ -470,7 +474,6 @@ function rotatePolygon(){
 				0, 0, 1, 0,
 				0, 0, 0, 1
 	);
-
 	movePolygon();
 
 	// back to old system coordinat	es
@@ -487,7 +490,6 @@ function rotatePolygon(){
 // Translade the selected Polygon
 
 function movePolygon(){
-
 		selectedPolygon.ThreePoly.geometry.applyMatrix (transformationMatrix);
 		for(var i = 0; i < selectedPolygon.vertices.length;i++){
 			selectedPolygon.vertices[i].applyMatrix4(transformationMatrix);

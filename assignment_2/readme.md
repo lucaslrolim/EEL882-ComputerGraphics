@@ -3,9 +3,9 @@ O objetivo do trabalho é desenvovler uma aplicação iterativa com polígonos, 
 O usuário poderá:
 
 - Desenhar segmentos de reta de modo a formar um polígono;
-- Transladar polígonos;
 - Estabelecer um eixo de rotação para um polígono;
-- Rotacionar um polígono;
-- Associar polígonos uns aos outros, de modo a deixar suas translações  rotações relacionadas.
+- Associar polígonos uns aos outros
+- Transladar polígonos;
+- Rotacionar um polígono, quando este estiver pregado a outro;
 
 Para o desenvolvimento foi utilizada a biblioteca THREE.js.
