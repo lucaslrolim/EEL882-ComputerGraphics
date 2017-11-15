@@ -12,8 +12,7 @@
 THREE.MouseControls = function ( object, domElement ) {
 
 	var _this = this;
-	var STATE = { NONE: - 1, ROTATE: 0, ZOOM: 1, PAN: 2, TOUCH_ROTATE: 3, TOUCH_ZOOM_PAN: 4 };
-
+	var STATE = { NONE: - 1,ZOOM: 1, PAN: 2 }; 	
 	this.object = object;
 	this.domElement = ( domElement !== undefined ) ? domElement : document;
 
@@ -350,7 +349,7 @@ THREE.MouseControls = function ( object, domElement ) {
 
 		switch ( event.deltaMode ) {
 
-                        case 2:
+             case 2:
                                 // Zoom in pages
                                 _zoomStart.y -= event.deltaY * 0.025;
                                 break;
