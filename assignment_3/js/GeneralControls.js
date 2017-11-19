@@ -4,29 +4,24 @@ var camera, scene, renderer;
 init();
 animate();
 
+// This variable will store the object that we have in the scene
 var skeleton;
 
-// arcball implementarion
-
-var last_mx = 0;
-var last_my = 0;
-var cur_mx = 0;
-var cur_my = 0;
-var arcball_on = false;
-
+// Mouse Variable controls
 var mouseIsPressed, mouseX, mouseY, pmouseX, pmouseY;
 var buttonPressed;
 var lastMousePoint;
 
+// Variable to check if user wants to manipulate the scene or use the frames functionalities
+var onCanvas;
+
 function init() {
+	// Space on the page that we will add the scene
+	container = document.getElementById( 'canvas' );
 
-	container = document.createElement('div');
-	document.body.appendChild(container);
-
-	/// Initial setting to camera, light, and scene ////
-
+	// Initial setting to camera, light, and scene 
 	camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-	camera.position.z = 50;
+	camera.position.z = 70;
 
 	scene = new THREE.Scene();
 	scene.add(new THREE.HemisphereLight());
@@ -52,12 +47,15 @@ function init() {
 	container.appendChild(renderer.domElement);
 
 
-	// Mouse Controls is an adaptation from Trackball controls that take care of zoom and translation
+	// Mouse Controls is an adaptation from Trackball controls that take care of zoom and translation moving the camera
 
-	controls = new THREE.MouseControls(camera);
-	// document.addEventListener( 'mousedown', mousePressed, false );
+	//controls = new THREE.MouseControls(camera);
+
+	// Fix the scene when resizing the browser
 	window.addEventListener('resize', resize, false);
 
+
+	// Mouse Listeners
 
 	mouseIsPressed = false;
 	mouseX = 0;
@@ -92,22 +90,23 @@ function init() {
 
 }
 
+
+// MOUSE FUNCTIONS
+
 function mousePressed() {
 	buttonPressed = event.button
-	if (buttonPressed == 0) {
-		console.log('click');
+	if (buttonPressed == 0 && onCanvas) {
 		lastMousePoint = { "x": mouseX, "y": mouseY };
 	}
 }
 
 function mouseMoved() {
 	if (event.button == 0) {
-
 	}
 }
 
 function mouseDragged() {
-	if (buttonPressed == 0) {
+	if (buttonPressed == 0 && onCanvas) {
 		var v1 = get_arcball_vector(lastMousePoint.x, lastMousePoint.y);
 		var v2 = get_arcball_vector(mouseX, mouseY);
 		var angle = v1.angleTo(v2);
@@ -115,17 +114,17 @@ function mouseDragged() {
 		var quaternion = new THREE.Quaternion();
 		quaternion.setFromAxisAngle(crossProduct, angle);
 		skeleton.applyQuaternion(quaternion);
-
 		lastMousePoint = { "x": mouseX, "y": mouseY };
 	}
 }
 
 function mouseReleased() {
-
 }
 
-function resize() {
 
+// SCENE FUNCTIONS
+
+function resize() {
 	camera.aspect = window.innerWidth / window.innerHeight;
 	camera.updateProjectionMatrix();
 	renderer.setSize(window.innerWidth, window.innerHeight);
@@ -133,27 +132,17 @@ function resize() {
 }
 
 function animate() {
-	controls.update();
+	//controls.update();
 	renderer.render(scene, camera);
 	requestAnimationFrame(animate);
 
 }
 
-/**
- * Get a normalized vector from the center of the virtual ball O to a
- * point P on the virtual ball surface, such that P is aligned on
- * screen's (X,Y) coordinates.  If (X,Y) is too far away from the
- * sphere, return the nearest point on the virtual ball surface.
- */
+// UTILITY FUNCTIONS
 
-function get_arcball_vector(x, y) {
-	//var P = new THREE.Vector3(1.0*x/window.innerWidth*2 - 1.0,1.0*y/window.innerHeight*2 - 1.0,0);
-	// console.log(camera);
-
+// Get a normalized vector from the center of the virtual ball O to a point P on the virtual ball surface
+function get_arcball_vector(x, y) {	
 	var mousePos = new THREE.Vector3(x - window.innerWidth / 2, y - window.innerHeight / 2, 0);
-	console.log(mousePos);
-	console.log("----")
-	console.log(camera.position);
 	var cameraPos = new THREE.Vector3(camera.position.x, camera.position.y, -camera.position.z);
 	var P = new THREE.Vector3();
 	P.subVectors(mousePos, cameraPos);
@@ -168,3 +157,12 @@ function get_arcball_vector(x, y) {
 	return P;
 }
 
+// Check if user click on the frame controls or on the scene
+
+function settings() {
+	onCanvas = false;
+ }
+
+function canvas() {
+	onCanvas = true;
+ }

@@ -1,0 +1,36 @@
+body {
+    font-family: Monospace;
+    background-color: #000;
+    color: #fff;
+    margin: 0px;
+    overflow: hidden;
+}
+#info {
+    color: #fff;
+    position: absolute;
+    background-color: #5382A1;
+    height: 76px;
+    width: 100%;
+    text-align: center;
+    display:block;
+    box-sizing: border-box;
+    padding-top: 10px;
+}
+
+
+
+.btn-circle {
+  width: 20px;
+  height: 20px;
+  font-size: 8px;
+  text-align: center;
+  padding: 2px 0;
+  box-shadow:none;
+  -webkit-appearance: none;
+  border-radius: 10px;
+  background-color: #e8eaed;
+}
+
+.range-slider__range{
+  width: 70%;
+}
