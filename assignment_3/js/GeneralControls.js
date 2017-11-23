@@ -53,7 +53,7 @@ function init() {
 
 	// Fix the scene when resizing the browser
 	window.addEventListener('resize', resize, false);
-
+	
 
 	// Mouse Listeners
 
@@ -119,8 +119,9 @@ function mouseDragged() {
 }
 
 function mouseReleased() {
-}
 
+
+}
 
 // SCENE FUNCTIONS
 
@@ -166,3 +167,4 @@ function settings() {
 function canvas() {
 	onCanvas = true;
  }
+

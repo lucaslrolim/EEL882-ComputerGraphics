@@ -36,7 +36,7 @@ var rangeSlider = function(){
       btn.innerHTML = i;
       btn.addEventListener("click", saveFrame.bind(null, i) );
       // Saves initial position state:
-      states[i] = new THREE.Vector4();
+      states[i] = {"quaternion":new THREE.Quaternion(),"position":new THREE.Vector3()};
       // Appends the button:
       var frame = document.getElementById("frames");
       frame.appendChild(btn);
@@ -55,12 +55,37 @@ var rangeSlider = function(){
     if(used.bool){
       document.getElementById("frame"+i).style.backgroundColor = "#e8eaed";
       framesInUse.splice(used.index, 1)
-      states[i] = new THREE.Vector4();
+      states[i] = {"quaternion":new THREE.Quaternion(),"position":new THREE.Vector3()}
     }
     else{
       document.getElementById("frame"+i).style.backgroundColor = "#2ecc71";
       framesInUse.push(i);
-      states[i] = skeleton.position;
+      states[i].quaternion._x = skeleton.quaternion._x;
+      states[i].quaternion._y = skeleton.quaternion._y;
+      states[i].quaternion._z = skeleton.quaternion._z;
+      states[i].quaternion._w = skeleton.quaternion._w;
+      states[i].position = skeleton.position;
     }
-    console.log(framesInUse);
+  }
+
+  /// Animate (interpolate) frames using lerp and slerp
+
+  var delta;
+  var frameIndex;
+
+  function playAnimation(){
+    frameIndex = 0;
+    setInterval(move, 10);
+  }
+  
+  function move(){
+    var step = 0.01;
+    if(delta < 1 && framesInUse[frameIndex-1] != undefined){
+      delta += step;
+      skeleton.quaternion.slerp(states[framesInUse[frameIndex-1]].quaternion,step);
+    }
+    else{
+      delta = 0;
+      frameIndex += 1;
+    }
   }
