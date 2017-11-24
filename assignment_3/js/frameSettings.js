@@ -14,6 +14,7 @@ var rangeSlider = function(){
       });
   
       range.on('input', function(){
+        onCanvas = false;
         $(this).next(value).html(this.value);
       });
     });
@@ -64,7 +65,7 @@ var rangeSlider = function(){
       states[i].quaternion._y = skeleton.quaternion._y;
       states[i].quaternion._z = skeleton.quaternion._z;
       states[i].quaternion._w = skeleton.quaternion._w;
-      states[i].position = skeleton.position;
+      states[i].position = new THREE.Vector3(skeleton.position.x,skeleton.position.y,skeleton.position.z);
     }
   }
 
@@ -75,14 +76,15 @@ var rangeSlider = function(){
 
   function playAnimation(){
     frameIndex = 0;
-    setInterval(move, 10);
+    setInterval(move, 40);
   }
   
   function move(){
     var step = 0.01;
     if(delta < 1 && framesInUse[frameIndex-1] != undefined){
       delta += step;
-      skeleton.quaternion.slerp(states[framesInUse[frameIndex-1]].quaternion,step);
+      skeleton.position.lerp(states[framesInUse[frameIndex-1]].position,delta);
+      skeleton.quaternion.slerp(states[framesInUse[frameIndex-1]].quaternion,delta);
     }
     else{
       delta = 0;

@@ -10,18 +10,22 @@ var skeleton;
 // Mouse Variable controls
 var mouseIsPressed, mouseX, mouseY, pmouseX, pmouseY;
 var buttonPressed;
-var lastMousePoint;
+var clickedPoint;
 
 // Variable to check if user wants to manipulate the scene or use the frames functionalities
-var onCanvas;
+var onCanvas = true;
+
+var sup_camera;
 
 function init() {
 	// Space on the page that we will add the scene
 	container = document.getElementById( 'canvas' );
 
 	// Initial setting to camera, light, and scene 
-	camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+	camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 500);
 	camera.position.z = 70;
+
+	sup_camera = camera;
 
 	scene = new THREE.Scene();
 	scene.add(new THREE.HemisphereLight());
@@ -53,7 +57,6 @@ function init() {
 
 	// Fix the scene when resizing the browser
 	window.addEventListener('resize', resize, false);
-	
 
 	// Mouse Listeners
 
@@ -65,8 +68,9 @@ function init() {
 	var setMouse = function () {
 		mouseX = event.clientX;
 		mouseY = event.clientY;
+		
 	}
-
+	document.addEventListener( 'wheel', mousewheel, false );
 	document.addEventListener('mousedown', function () {
 		setMouse();
 		mouseIsPressed = true;
@@ -96,7 +100,7 @@ function init() {
 function mousePressed() {
 	buttonPressed = event.button
 	if (buttonPressed == 0 && onCanvas) {
-		lastMousePoint = { "x": mouseX, "y": mouseY };
+		clickedPoint = { "x": mouseX, "y": mouseY };
 	}
 }
 
@@ -107,14 +111,35 @@ function mouseMoved() {
 
 function mouseDragged() {
 	if (buttonPressed == 0 && onCanvas) {
-		var v1 = get_arcball_vector(lastMousePoint.x, lastMousePoint.y);
+		var v1 = get_arcball_vector(clickedPoint.x, clickedPoint.y);
 		var v2 = get_arcball_vector(mouseX, mouseY);
 		var angle = v1.angleTo(v2);
 		var crossProduct = v1.cross(v2).normalize();
 		var quaternion = new THREE.Quaternion();
 		quaternion.setFromAxisAngle(crossProduct, angle);
 		skeleton.applyQuaternion(quaternion);
-		lastMousePoint = { "x": mouseX, "y": mouseY };
+		clickedPoint = { "x": mouseX, "y": mouseY };
+	}
+	if(buttonPressed == 2 && onCanvas){
+		m_x = (mouseX / window.innerWidth) * 2 - 1;
+		m_y = - (mouseY/ window.innerHeight) * 2 + 1;
+
+		var vector = new THREE.Vector3(m_x  , m_y , 0.5);
+		vector.unproject( camera );
+		var dir = vector.sub( camera.position ).normalize();
+		var distance = - camera.position.z / dir.z;
+		var pos = camera.position.clone().add( dir.multiplyScalar( distance ) );
+		skeleton.position.x = pos.x;
+		skeleton.position.y = pos.y;
+	}
+}
+
+function mousewheel(event){
+	if (event.deltaY < 0){
+		skeleton.position.z += 5;
+	}
+	else {
+		skeleton.position.z -= 5;
 	}
 }
 
@@ -138,6 +163,7 @@ function animate() {
 	requestAnimationFrame(animate);
 
 }
+
 
 // UTILITY FUNCTIONS
 
