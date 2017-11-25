@@ -9,7 +9,7 @@ body {
     color: #fff;
     position: absolute;
     background-color: #5382A1;
-    height: 76px;
+    height:76px;
     width: 100%;
     text-align: center;
     display:block;
@@ -33,4 +33,20 @@ body {
 
 .range-slider__range{
   width: 70%;
+}
+
+.button {
+  box-sizing: border-box;
+  height: 30px;
+  background-color: #5382a1;
+  border-color: #5382a1 #5382a1 #5382a1 #202020;
+  cursor: pointer;
+  border-style: solid;
+  border-width: 20px 0 20px 40px;
+
+}
+
+
+.range-slider__range {
+  width: 1000px;
 }

@@ -1,5 +1,9 @@
 
-// SLIDER FUNCTIONS
+/*
+ * BASIC RANGE SLDIER FUNCTIONS.
+ * Move the bar and get the value
+ * 
+ */
 
 var rangeSlider = function(){
     var slider = $('.range-slider'),
@@ -22,7 +26,12 @@ var rangeSlider = function(){
   
   rangeSlider();
 
-  // FRAMES FUNCTIONS
+
+  /*
+ * FRAMES FUNCTIONS.
+ * Create the frame structures and also create buttons to the user interact
+ * 
+ */
 
   // Generate the frames` buttons and add to the html
   var states = [];
@@ -71,23 +80,155 @@ var rangeSlider = function(){
 
   /// Animate (interpolate) frames using lerp and slerp
 
-  var delta;
-  var frameIndex;
 
+/*
+ * ANIMATION FUNCTIONS
+ * Functions to allow the user to create an automatic animation through the frames
+ * 
+ */
+
+  var frameIndex;
+  var step  = 0;
+  var stop  = true;
   function playAnimation(){
     frameIndex = 0;
-    setInterval(move, 40);
+    setInterval(move, 30);
+    stop = !stop;
   }
   
   function move(){
-    var step = 0.01;
-    if(delta < 1 && framesInUse[frameIndex-1] != undefined){
-      delta += step;
-      skeleton.position.lerp(states[framesInUse[frameIndex-1]].position,delta);
-      skeleton.quaternion.slerp(states[framesInUse[frameIndex-1]].quaternion,delta);
+    if(step <= 1 && framesInUse[frameIndex-1] != undefined && !stop){
+      step += 0.01;
+      skeleton.position.lerp(states[framesInUse[frameIndex-1]].position,step);
+      skeleton.quaternion.slerp(states[framesInUse[frameIndex-1]].quaternion,step);
     }
     else{
-      delta = 0;
+      step = 0;
       frameIndex += 1;
     }
+    if(frameIndex > framesInUse.length && !stop){
+      frameIndex = 0;
+    }
   }
+
+
+/*
+ * ANIMATION USING RANGE BAR FUNCTIONS
+ * Create an animation according the way the user interact with the range bar
+ * 
+ */
+
+setInterval(changeFrame, 40);
+
+
+var lasRange = 0;
+var frames = {"atMoment":-1,"next":-1}
+var emptyFrames;
+var n_s = 1;
+var p_s = 1;
+
+function changeFrame(){
+  // sotr the state value of the range bar
+  var momentRange = parseInt($('.range-slider__value').prev().attr('value'));
+  // ##TODO Reverse function not working properly. Need to order this array
+  framesInUse.reverse();
+  // check if user move the range bar
+  if(momentRange != lasRange){
+    // store the direction the user move the range bar
+    var direction;
+    if(momentRange > lasRange){
+      direction = 1;
+    }
+    else{
+      direction = -1;
+    }
+
+    frames.atMoment = momentRange;
+    defineNextFrame(direction);
+
+    // If the frame is not been used the user interpolete the object to the next valid frame
+    if($.inArray(momentRange, framesInUse) == -1 && frames.next != -1){
+      emptyFrames = Math.abs(frames.next - frames.atMoment);
+      var step = 1/emptyFrames;
+      if (step <= 1){
+        skeleton.position.lerp(states[frames.next].position,step);
+        skeleton.quaternion.slerp(states[frames.next].quaternion,step);
+      }
+    }
+    // reset temporary variables when arriving at a frame that is in use
+    else{
+      if(direction > 0 ){
+        n_s += 1;
+        ps_s = 1;
+      }
+      else{
+        ps_s += 1;
+        n_s = 1;
+      }
+    }
+    lasRange = momentRange;
+  }
+}
+
+// Define the frame that we will use to interpolate to the next position
+function defineNextFrame(direction){
+  var f_index;
+  f_index = framesInUse.indexOf(frames.atMoment);
+  // check if the range in the bar is a frame in use (f_index != -1)
+  if(f_index != -1){
+    // Depending on the direction, setting the next frame
+    // if we are on the first or last frame in use, the next frame will be itself
+
+    // user moves bar --->
+    if(direction > 0){
+      if(f_index + n_s < framesInUse.length){
+        frames.next = framesInUse[f_index+n_s];
+      }
+      else{
+        frames.next = frames.atMoment ;
+      }
+    }
+    // user moves bar <---
+    if(direction < 0){
+      if(f_index - p_s > 0){
+        frames.next = framesInUse[f_index-p_s];
+      }
+      else{
+        frames.next = frames.atMoment;
+      }
+  }
+  }
+  // If we are not in a frame that is in use, we will find the next valid frame to interpolate
+  else{
+    if(direction > 0){
+      frames.next = findIndex(1,frames.atMoment,framesInUse);
+    }
+    if(direction < 0 ){
+      frames.next = findIndex(-1,frames.atMoment,framesInUse);
+    }
+    }
+}
+
+
+// Find the smaller frame in use bigger than the actual range on the bar (if dir == -1) or
+// the smaller frame in use bigger than the actual range on the bar (if dir ==1)
+function findIndex(dir,number,array){
+  var ret;
+
+  if(dir == 1){
+    for(var i = 0;i < array.length;i++){
+      if(array[i] > number){
+        return array[i];
+      }
+    }
+  }
+
+  if(dir == -1){
+    for(var i = 0;i < array.length;i++){
+      if(array[i] > number){
+        return array[i-1];
+      }
+    }
+  }
+
+}

@@ -12,10 +12,14 @@
 
 		<div id="info" onclick="settings()">
 			EEL882 - Trabalho 3 - Lucas Rolim
-			<div class="range-slider" onclick="settings()">
+			<div style="width: 90%; float:left" class="range-slider" onclick="settings()">
 					<input class="range-slider__range" type="range" value="0" min="0" max="50">
 					<span class="range-slider__value">0</span>
 			</div> 
+			 
+			 <div style="width: 10%; float:right">
+				<button class='button' onclick="playAnimation()"> </button>
+			 </div>
 			<div id="frames">
 
 			</div>
@@ -29,7 +33,6 @@
 			  
 		<script src="./js/three.js"></script>
 		<script src="js/TDSLoader.js"></script>		
-		<script src="js/MouseControls.js"></script>
 		<script src="js/GeneralControls.js"></script>
 		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>
 		<script src="js/frameSettings.js"></script>
