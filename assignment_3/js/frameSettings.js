@@ -27,6 +27,15 @@ var rangeSlider = function(){
   rangeSlider();
 
 
+  $(document).ready(function() {
+    var btn = $(".button");
+    btn.click(function() {
+      btn.toggleClass("paused");
+      return false;
+    });
+  });
+  
+
   /*
  * FRAMES FUNCTIONS.
  * Create the frame structures and also create buttons to the user interact
@@ -131,7 +140,7 @@ function changeFrame(){
   // sotr the state value of the range bar
   var momentRange = parseInt($('.range-slider__value').prev().attr('value'));
   // ##TODO Reverse function not working properly. Need to order this array
-  framesInUse.reverse();
+  framesInUse = framesInUse.sort((a, b) => a - b);
   // check if user move the range bar
   if(momentRange != lasRange){
     // store the direction the user move the range bar
@@ -231,4 +240,10 @@ function findIndex(dir,number,array){
     }
   }
 
+}
+
+function sortArray(array){
+  for (var i = 0; i < array.length;i++){
+
+  }
 }
