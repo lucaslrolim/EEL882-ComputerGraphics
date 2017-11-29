@@ -15,7 +15,6 @@ var clickedPoint;
 // Variable to check if user wants to manipulate the scene or use the frames functionalities
 var onCanvas = true;
 
-var sup_camera;
 
 function init() {
 	// Space on the page that we will add the scene
@@ -111,6 +110,7 @@ function mouseMoved() {
 
 function mouseDragged() {
 	if (buttonPressed == 0 && onCanvas) {
+		// Rotate the object using Arcball paradigm and Quaternions
 		var v1 = get_arcball_vector(clickedPoint.x, clickedPoint.y);
 		var v2 = get_arcball_vector(mouseX, mouseY);
 		var angle = v1.angleTo(v2);
@@ -121,20 +121,30 @@ function mouseDragged() {
 		clickedPoint = { "x": mouseX, "y": mouseY };
 	}
 	if(buttonPressed == 2 && onCanvas){
+		// translate the object
 		m_x = (mouseX / window.innerWidth) * 2 - 1;
 		m_y = - (mouseY/ window.innerHeight) * 2 + 1;
-		var vector = new THREE.Vector3(m_x  , m_y , 0.5);
+		var vector = new THREE.Vector3(m_x , m_y  , 0.5);
 		vector.unproject(camera);
-		var dir = vector.sub( camera.position ).normalize();
-		var distance = - camera.position.z/ dir.z;
-		var pos = camera.position.clone().add( dir.multiplyScalar(distance) );
-		skeleton.position.x = pos.x;
-		skeleton.position.y = pos.y;
+		var dir = vector.sub( camera.position );
+		var distance = - (camera.position.z)/ dir.z;
+		var pos = camera.position.clone().	add( dir.multiplyScalar(distance) );
+		// These delta and signal are factors to help handle with the effects of objects` Z translation
+		// and the divergences that in mouse coordinates 
+		var delta = Math.abs(skeleton.position.z*distance*0.00008)
+		var signal = 1;
+		if(skeleton.position.z > 0){
+			signal = -1;
+		}
+		// change object position
+		skeleton.position.x = pos.x + pos.x * delta *signal;
+		skeleton.position.y = pos.y + pos.y * delta*signal;
 
 	}
 }
 
 function mousewheel(event){
+	// Transtalte the object on Z axis
 	if (event.deltaY < 0){
 		skeleton.position.z += 5;
 	}
@@ -144,7 +154,6 @@ function mousewheel(event){
 }
 
 function mouseReleased() {
-
 
 }
 
