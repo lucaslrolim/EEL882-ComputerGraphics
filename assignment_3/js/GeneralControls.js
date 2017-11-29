@@ -49,11 +49,6 @@ function init() {
 	renderer.setSize(window.innerWidth, window.innerHeight);
 	container.appendChild(renderer.domElement);
 
-
-	// Mouse Controls is an adaptation from Trackball controls that take care of zoom and translation moving the camera
-
-	//controls = new THREE.MouseControls(camera);
-
 	// Fix the scene when resizing the browser
 	window.addEventListener('resize', resize, false);
 
@@ -167,7 +162,6 @@ function resize() {
 }
 
 function animate() {
-	//controls.update();
 	renderer.render(scene, camera);
 	requestAnimationFrame(animate);
 
