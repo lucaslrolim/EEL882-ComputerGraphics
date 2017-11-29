@@ -1,8 +1,8 @@
-##Trabalho 3 - Computação gGáfica
+## Trabalho 3 - Computação gGáfica
 
 Trabalho desenvolvido para a disciplina de computação gráfica, ministrada no segundo semestre de 2017 na UFRJ pelo professor Cláudio Esperança.
 
-##Objetivo
+## Objetivo
 
 O objetivo desse trabalho é permitir a manipulação de um objeto 3D qualquer, modelado por alguma ferramenta externa e fornecido em formato *.3ds*. Além da movimentação com 6 graus de liberdade, buscamos permitir que o usuário crie interpolações de quadros chave, de modo a criar uma espécie de animação.
 
@@ -20,7 +20,7 @@ Quanto maior o espaço de quadros em branco entre dois quadros preeenchidos mais
 Para animar as posições salvas é possível utilizar o botão de Play no canto superior direito da tela ou mover a barra de centro superior da tela, em qualquer um dos sentidos.
 
 
-##Execução
+## Execução
 
 Para executar o projeto execute no terminal um servidor hhtp, por exemplo:
 
