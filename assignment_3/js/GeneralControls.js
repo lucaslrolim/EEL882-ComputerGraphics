@@ -123,14 +123,14 @@ function mouseDragged() {
 	if(buttonPressed == 2 && onCanvas){
 		m_x = (mouseX / window.innerWidth) * 2 - 1;
 		m_y = - (mouseY/ window.innerHeight) * 2 + 1;
-
 		var vector = new THREE.Vector3(m_x  , m_y , 0.5);
-		vector.unproject( camera );
+		vector.unproject(camera);
 		var dir = vector.sub( camera.position ).normalize();
-		var distance = - camera.position.z / dir.z;
-		var pos = camera.position.clone().add( dir.multiplyScalar( distance ) );
+		var distance = - camera.position.z/ dir.z;
+		var pos = camera.position.clone().add( dir.multiplyScalar(distance) );
 		skeleton.position.x = pos.x;
 		skeleton.position.y = pos.y;
+
 	}
 }
 
@@ -168,21 +168,33 @@ function animate() {
 // UTILITY FUNCTIONS
 
 // Get a normalized vector from the center of the virtual ball O to a point P on the virtual ball surface
-function get_arcball_vector(x, y) {	
+function get_arcball_vector(x, y) {
+	// Arcball implementation based on:
+	// https://en.wikibooks.org/wiki/OpenGL_Programming/Modern_OpenGL_Tutorial_Arcball
+
+	// Getting mouse position in screen cordenates
 	var mousePos = new THREE.Vector3(x - window.innerWidth / 2, y - window.innerHeight / 2, 0);
-	var cameraPos = new THREE.Vector3(camera.position.x, camera.position.y, -camera.position.z);
+	// Getting object position in screen coordenates
+	var objectPos = new THREE.Vector3();
+	objectPos.setFromMatrixPosition(skeleton.matrixWorld);
+	objectPos.project(camera);
+	objectPos.x *=  window.innerWidth / 2 ;
+	objectPos.y *= - window.innerHeight / 2;
+
 	var P = new THREE.Vector3();
-	P.subVectors(mousePos, cameraPos);
+	P.subVectors(mousePos, objectPos);
 	P.y = -P.y;
 	var OP_squared = P.x * P.x + P.y * P.y;
-	if (OP_squared <= 0.5 * 0.5) {
-		P.z = Math.sqrt(0.5 * 0.5 - OP_squared);  // Pythagore
+	var ballSize = skeleton.position.z * 0.5 + 70 * 2.5; // Adjust the ball size when user zoom in or zoom out the object
+	if (OP_squared <= ballSize* ballSize) {
+		P.z = Math.sqrt(ballSize * ballSize - OP_squared);  // Pythagore
 	}
 	else {
 		P = P.normalize();
 	}
 	return P;
 }
+
 
 // Check if user click on the frame controls or on the scene
 

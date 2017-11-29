@@ -27,15 +27,6 @@ var rangeSlider = function(){
   rangeSlider();
 
 
-  $(document).ready(function() {
-    var btn = $(".button");
-    btn.click(function() {
-      btn.toggleClass("paused");
-      return false;
-    });
-  });
-  
-
   /*
  * FRAMES FUNCTIONS.
  * Create the frame structures and also create buttons to the user interact
@@ -107,7 +98,7 @@ var rangeSlider = function(){
   
   function move(){
     if(step <= 1 && framesInUse[frameIndex-1] != undefined && !stop){
-      step += 0.01;
+      step += 0.05;
       skeleton.position.lerp(states[framesInUse[frameIndex-1]].position,step);
       skeleton.quaternion.slerp(states[framesInUse[frameIndex-1]].quaternion,step);
     }
@@ -120,6 +111,16 @@ var rangeSlider = function(){
     }
   }
 
+// Switch button state
+
+  $(document).ready(function() {
+    var btn = $(".button");
+    btn.click(function() {
+      btn.toggleClass("paused");
+      return false;
+    });
+  });
+  
 
 /*
  * ANIMATION USING RANGE BAR FUNCTIONS
@@ -240,10 +241,4 @@ function findIndex(dir,number,array){
     }
   }
 
-}
-
-function sortArray(array){
-  for (var i = 0; i < array.length;i++){
-
-  }
 }
