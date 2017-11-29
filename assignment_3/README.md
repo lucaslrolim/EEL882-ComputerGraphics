@@ -1,4 +1,4 @@
-## Trabalho 3 - Computação gGáfica
+## Trabalho 3 - Computação Gráfica
 
 Trabalho desenvolvido para a disciplina de computação gráfica, ministrada no segundo semestre de 2017 na UFRJ pelo professor Cláudio Esperança.
 
@@ -9,7 +9,7 @@ O objetivo desse trabalho é permitir a manipulação de um objeto 3D qualquer, 
 ## Comandos básicos
 - **Transalação:** para transladar o objeto basta manter o botão direito do mouse pressionado e mover na tela. É importante notar que caso o usuário clique fora do objeto, este será movido automáticamente para a posição que foi clicada na tela.
 - **Rotação:** para rotacionar o objeto pressione o botão esquerdo do mouse e mova. O paradigma usado para a rotação foi o *Arcball*, então deve-se sempre pensar que o objeto está envolto em uma esfera na hora de rotacionar.
-- **Zoom: ** para aproximar ou afastar o objeto do campo de visão é necessário utilizar o *mouse wheel*, ou seja, a rolagem do mouse.
+- **Zoom:** para aproximar ou afastar o objeto do campo de visão é necessário utilizar o *mouse wheel*, ou seja, a rolagem do mouse.
 
 ## Criando uma animação
 
