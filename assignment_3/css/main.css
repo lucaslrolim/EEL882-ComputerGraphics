@@ -59,3 +59,32 @@ body {
 .range-slider__range {
   width: 1000px;
 }
+
+.btn {
+  display: inline-block;
+  padding: 9px 12px;
+  padding-top: 7px;
+  margin-bottom: 0;
+  font-size: 14px;
+  line-height: 20px;
+  color: #5e5e5e;
+  text-align: center;
+  vertical-align: middle;
+  cursor: pointer;
+  background-color: #d1dade;
+  -webkit-border-radius: 3px;
+  -webkit-border-radius: 3px;
+  -webkit-border-radius: 3px;
+  background-image: none !important;
+  border: none;
+  text-shadow: none;
+  box-shadow: none;
+  transition: all 0.12s linear 0s !important;
+  font: 14px/20px "Helvetica Neue",Helvetica,Arial,sans-serif;
+  }
+
+  .btn-warning {
+    color: #fff;
+    background-color: #f0ad4e;
+    border-color: #eea236;
+    }

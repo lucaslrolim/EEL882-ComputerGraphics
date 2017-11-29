@@ -70,11 +70,11 @@ var rangeSlider = function(){
     else{
       document.getElementById("frame"+i).style.backgroundColor = "#2ecc71";
       framesInUse.push(i);
-      states[i].quaternion._x = skeleton.quaternion._x;
-      states[i].quaternion._y = skeleton.quaternion._y;
-      states[i].quaternion._z = skeleton.quaternion._z;
-      states[i].quaternion._w = skeleton.quaternion._w;
-      states[i].position = new THREE.Vector3(skeleton.position.x,skeleton.position.y,skeleton.position.z);
+      states[i].quaternion._x = object.quaternion._x;
+      states[i].quaternion._y = object.quaternion._y;
+      states[i].quaternion._z = object.quaternion._z;
+      states[i].quaternion._w = object.quaternion._w;
+      states[i].position = new THREE.Vector3(object.position.x,object.position.y,object.position.z);
     }
   }
 
@@ -99,8 +99,8 @@ var rangeSlider = function(){
   function move(){
     if(step <= 1 && framesInUse[frameIndex-1] != undefined && !stop){
       step += 0.05;
-      skeleton.position.lerp(states[framesInUse[frameIndex-1]].position,step);
-      skeleton.quaternion.slerp(states[framesInUse[frameIndex-1]].quaternion,step);
+      object.position.lerp(states[framesInUse[frameIndex-1]].position,step);
+      object.quaternion.slerp(states[framesInUse[frameIndex-1]].quaternion,step);
     }
     else{
       step = 0;
@@ -161,8 +161,8 @@ function changeFrame(){
       emptyFrames = Math.abs(frames.next - frames.atMoment);
       var step = 1/emptyFrames;
       if (step <= 1){
-        skeleton.position.lerp(states[frames.next].position,step);
-        skeleton.quaternion.slerp(states[frames.next].quaternion,step);
+        object.position.lerp(states[frames.next].position,step);
+        object.quaternion.slerp(states[frames.next].quaternion,step);
       }
     }
     // reset temporary variables when arriving at a frame that is in use

@@ -5,7 +5,7 @@ init();
 animate();
 
 // This variable will store the object that we have in the scene
-var skeleton;
+var object;
 
 // Mouse Variable controls
 var mouseIsPressed, mouseX, mouseY, pmouseX, pmouseY;
@@ -36,9 +36,9 @@ function init() {
 	// Loading object from .3ds model and adding it into the scene
 
 	var loader = new THREE.TDSLoader();
-	loader.load('models/skeleton.3ds', function (object) {
-		skeleton = object;
-		scene.add(object);
+	loader.load('models/skeleton.3ds', function (m_object) {
+		object = m_object;
+		scene.add(m_object);
 
 	});
 
@@ -112,7 +112,7 @@ function mouseDragged() {
 		var crossProduct = v1.cross(v2).normalize();
 		var quaternion = new THREE.Quaternion();
 		quaternion.setFromAxisAngle(crossProduct, angle);
-		skeleton.applyQuaternion(quaternion);
+		object.applyQuaternion(quaternion);
 		clickedPoint = { "x": mouseX, "y": mouseY };
 	}
 	if(buttonPressed == 2 && onCanvas){
@@ -126,14 +126,14 @@ function mouseDragged() {
 		var pos = camera.position.clone().	add( dir.multiplyScalar(distance) );
 		// These delta and signal are factors to help handle with the effects of objects` Z translation
 		// and the divergences that in mouse coordinates 
-		var delta = Math.abs(skeleton.position.z*distance*0.00008)
+		var delta = Math.abs(object.position.z*distance*0.00008)
 		var signal = 1;
-		if(skeleton.position.z > 0){
+		if(object.position.z > 0){
 			signal = -1;
 		}
 		// change object position
-		skeleton.position.x = pos.x + pos.x * delta *signal;
-		skeleton.position.y = pos.y + pos.y * delta*signal;
+		object.position.x = pos.x + pos.x * delta *signal;
+		object.position.y = pos.y + pos.y * delta*signal;
 
 	}
 }
@@ -141,10 +141,10 @@ function mouseDragged() {
 function mousewheel(event){
 	// Transtalte the object on Z axis
 	if (event.deltaY < 0){
-		skeleton.position.z += 5;
+		object.position.z += 5;
 	}
 	else {
-		skeleton.position.z -= 5;
+		object.position.z -= 5;
 	}
 }
 
@@ -179,7 +179,7 @@ function get_arcball_vector(x, y) {
 	var mousePos = new THREE.Vector3(x - window.innerWidth / 2, y - window.innerHeight / 2, 0);
 	// Getting object position in screen coordenates
 	var objectPos = new THREE.Vector3();
-	objectPos.setFromMatrixPosition(skeleton.matrixWorld);
+	objectPos.setFromMatrixPosition(object.matrixWorld);
 	objectPos.project(camera);
 	objectPos.x *=  window.innerWidth / 2 ;
 	objectPos.y *= - window.innerHeight / 2;
@@ -188,7 +188,7 @@ function get_arcball_vector(x, y) {
 	P.subVectors(mousePos, objectPos);
 	P.y = -P.y;
 	var OP_squared = P.x * P.x + P.y * P.y;
-	var ballSize = skeleton.position.z * 0.5 + 70 * 2.5; // Adjust the ball size when user zoom in or zoom out the object
+	var ballSize = object.position.z * 0.5 + 70 * 2.5; // Adjust the ball size when user zoom in or zoom out the object
 	if (OP_squared <= ballSize* ballSize) {
 		P.z = Math.sqrt(ballSize * ballSize - OP_squared);  // Pythagore
 	}

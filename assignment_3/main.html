@@ -2,7 +2,7 @@
 <html lang="en">
 	<head>
 		<link rel="stylesheet" type="text/css" href="css/main.css">
-		<title>Trabalho 3 - Lucas Rolim</title>
+		<title> Assignment 3 - Lucas Rolim</title>
 		
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
@@ -11,8 +11,12 @@
 	<body oncontextmenu="return false;">
 
 		<div id="info" onclick="settings()">
-			EEL882 - Trabalho 3 - Lucas Rolim
-			<div style="width: 90%; float:left" class="range-slider" onclick="settings()">
+			EEL882 - Assignment 3 - Lucas Rolim
+			<div style="width: 10%; float:left">
+				<br>
+				<button type="button" class="btn btn-warning btn-cons" onclick="info()">Instructions</button>
+			</div>
+			<div style="width: 80%; float:left" class="range-slider" onclick="settings()">
 					<input class="range-slider__range" type="range" value="0" min="0" max="50">
 					<span class="range-slider__value">0</span>
 			</div> 
@@ -20,6 +24,7 @@
 			 <div style="width: 10%; float:right">
 				<button class='button' onclick="playAnimation()"> </button>
 			 </div>
+			 
 			<div id="frames">
 
 			</div>
@@ -28,9 +33,13 @@
 		<div id="canvas" onclick="canvas()">
 		</div>
 		
-
-
-			  
+		<script>
+				function info(){
+					alert("You can do the follow operations with the object: rotate, translate, and animate.");
+					alert("Use the right button of the mouse to translate the object and the left button to rotate. Also, you can use the mouse wheel to zoom in/out.");
+					alert("To create an animation you will need to save the positions cliking on the frame bullets [1:50] and then cliking on the Play button or moving the range bar.\n\nTo remove a saved position just click again on the choosen frame.\n\nThe animation will be so smooth as the empty space between intermediate frames.")
+				}
+		</script>
 		<script src="./js/three.js"></script>
 		<script src="js/TDSLoader.js"></script>		
 		<script src="js/GeneralControls.js"></script>
